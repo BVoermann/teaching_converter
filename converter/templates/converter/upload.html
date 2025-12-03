@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to PowerPoint Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 50px 40px;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 0.95em;
+        }
+
+        .upload-area {
+            border: 3px dashed #d0d0d0;
+            border-radius: 15px;
+            padding: 50px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: #fafafa;
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #667eea;
+            background: #e8ecff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .upload-text {
+            color: #555;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0ff;
+            border-radius: 10px;
+            color: #667eea;
+            font-weight: 500;
+            display: none;
+        }
+
+        .convert-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            display: none;
+        }
+
+        .convert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .convert-btn:active {
+            transform: translateY(0);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #555;
+            font-size: 0.95em;
+            font-weight: 500;
+        }
+
+        .progress-bar-wrapper {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 14px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .status-message {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.95em;
+            min-height: 20px;
+        }
+
+        .download-btn {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+            display: none;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.6);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 3em;
+            color: #28a745;
+            margin-bottom: 15px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF to PowerPoint</h1>
+        <p class="subtitle">Convert your PDF documents to PowerPoint presentations</p>
+
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Click to upload or drag and drop</div>
+                <div class="upload-hint">PDF files only</div>
+                <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
+            </div>
+            <div class="file-name" id="fileName"></div>
+            <button type="submit" class="convert-btn" id="convertBtn">Convert to PowerPoint</button>
+        </form>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-label">
+                <span id="progressLabel">Processing...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+
+        <div class="success-icon" id="successIcon">✓</div>
+        <button class="download-btn" id="downloadBtn">Download PowerPoint</button>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const pdfFile = document.getElementById('pdfFile');
+        const fileName = document.getElementById('fileName');
+        const convertBtn = document.getElementById('convertBtn');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressLabel = document.getElementById('progressLabel');
+        const statusMessage = document.getElementById('statusMessage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successIcon = document.getElementById('successIcon');
+
+        // Click to upload
+        uploadArea.addEventListener('click', () => pdfFile.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                pdfFile.files = files;
+                displayFileName(files[0]);
+            }
+        });
+
+        // File input change
+        pdfFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                displayFileName(e.target.files[0]);
+            }
+        });
+
+        function displayFileName(file) {
+            fileName.textContent = `📎 ${file.name} (${formatFileSize(file.size)})`;
+            fileName.style.display = 'block';
+            convertBtn.style.display = 'block';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Form submission
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Hide elements
+            convertBtn.disabled = true;
+            errorMessage.style.display = 'none';
+            downloadBtn.style.display = 'none';
+            successIcon.style.display = 'none';
+
+            // Show progress
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressPercent.textContent = '0%';
+            progressLabel.textContent = 'Uploading...';
+            statusMessage.textContent = '';
+
+            const formData = new FormData(uploadForm);
+
+            try {
+                // Upload with progress simulation
+                let uploadProgress = 0;
+                const uploadInterval = setInterval(() => {
+                    if (uploadProgress < 90) {
+                        uploadProgress += 10;
+                        updateProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+                    }
+                }, 100);
+
+                const response = await fetch('', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(uploadInterval);
+                updateProgress(100, 'Uploaded', 'File uploaded successfully');
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Poll for conversion progress
+                pollProgress(data.task_id);
+
+            } catch (error) {
+                showError(error.message);
+                convertBtn.disabled = false;
+            }
+        });
+
+        async function pollProgress(taskId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/progress/${taskId}/`);
+                    const data = await response.json();
+
+                    updateProgress(data.progress, data.message, data.message);
+
+                    if (data.status === 'complete') {
+                        clearInterval(pollInterval);
+                        showSuccess(taskId);
+                    } else if (data.status === 'error') {
+                        clearInterval(pollInterval);
+                        showError(data.message);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    showError('Failed to check conversion status');
+                }
+            }, 500);
+        }
+
+        function updateProgress(percent, label, message) {
+            progressBar.style.width = percent + '%';
+            progressPercent.textContent = Math.round(percent) + '%';
+            progressLabel.textContent = label;
+            statusMessage.textContent = message;
+        }
+
+        function showSuccess(taskId) {
+            successIcon.style.display = 'block';
+            downloadBtn.style.display = 'block';
+            downloadBtn.onclick = () => {
+                window.location.href = `/download/${taskId}/`;
+            };
+        }
+
+        function showError(message) {
+            errorMessage.textContent = '❌ ' + message;
+            errorMessage.style.display = 'block';
+            progressContainer.style.display = 'none';
+            convertBtn.disabled = false;
+        }
+    </script>
+</body>
+</html>
