@@ -1,3 +1,4 @@
 .idea/
+converter/__pycache__/*
 venv/
 db.sqlite3
