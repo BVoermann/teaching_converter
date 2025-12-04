@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF to PowerPoint Converter</title>
+    <title>File Converter</title>
     <style>
         * {
             margin: 0;
@@ -25,9 +25,9 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            max-width: 700px;
             width: 100%;
-            padding: 50px 40px;
+            overflow: hidden;
             animation: slideIn 0.5s ease;
         }
 
@@ -40,6 +40,44 @@
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            position: relative;
+        }
+
+        .tab:hover {
+            background: #fff;
+            color: #667eea;
+        }
+
+        .tab.active {
+            background: #fff;
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 50px 40px;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         h1 {
@@ -100,14 +138,78 @@
             display: none;
         }
 
-        .file-name {
+        .file-list {
             margin-top: 20px;
-            padding: 15px;
+            display: none;
+        }
+
+        .file-item {
+            padding: 12px 15px;
             background: #f0f0ff;
-            border-radius: 10px;
+            border-radius: 8px;
             color: #667eea;
             font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item .remove-file {
+            cursor: pointer;
+            color: #c33;
+            font-weight: bold;
+        }
+
+        .options-group {
+            margin-top: 30px;
             display: none;
+        }
+
+        .option-label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .radio-option {
+            position: relative;
+        }
+
+        .radio-option input[type="radio"] {
+            display: none;
+        }
+
+        .radio-option label {
+            display: block;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .radio-option input[type="radio"]:checked + label {
+            background: #f0f0ff;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .radio-option label:hover {
+            border-color: #667eea;
         }
 
         .convert-btn {
@@ -239,91 +341,186 @@
             color: #28a745;
             margin-bottom: 15px;
             display: none;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>PDF to PowerPoint</h1>
-        <p class="subtitle">Convert your PDF documents to PowerPoint presentations</p>
-
-        <form id="uploadForm" method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="upload-area" id="uploadArea">
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Click to upload or drag and drop</div>
-                <div class="upload-hint">PDF files only</div>
-                <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
+        <div class="tabs">
+            <div class="tab active" data-tab="pdf-to-pptx">
+                <span>📄 PDF to PowerPoint</span>
             </div>
-            <div class="file-name" id="fileName"></div>
-            <button type="submit" class="convert-btn" id="convertBtn">Convert to PowerPoint</button>
-        </form>
-
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-label">
-                <span id="progressLabel">Processing...</span>
-                <span id="progressPercent">0%</span>
+            <div class="tab" data-tab="images-to-h5p">
+                <span>🖼️ Images to H5P</span>
             </div>
-            <div class="progress-bar-wrapper">
-                <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="status-message" id="statusMessage"></div>
         </div>
 
-        <div class="success-icon" id="successIcon">✓</div>
-        <button class="download-btn" id="downloadBtn">Download PowerPoint</button>
-        <div class="error-message" id="errorMessage"></div>
+        <!-- PDF to PPTX Tab Content -->
+        <div class="tab-content active" id="pdf-to-pptx">
+            <h1>PDF to PowerPoint</h1>
+            <p class="subtitle">Convert your PDF documents to PowerPoint presentations</p>
+
+            <form id="pdfUploadForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="pdfUploadArea">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Click to upload or drag and drop</div>
+                    <div class="upload-hint">PDF files only</div>
+                    <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
+                </div>
+                <div class="file-list" id="pdfFileName"></div>
+                <button type="submit" class="convert-btn" id="pdfConvertBtn">Convert to PowerPoint</button>
+            </form>
+
+            <div class="progress-container" id="pdfProgressContainer">
+                <div class="progress-label">
+                    <span id="pdfProgressLabel">Processing...</span>
+                    <span id="pdfProgressPercent">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="pdfProgressBar"></div>
+                </div>
+                <div class="status-message" id="pdfStatusMessage"></div>
+            </div>
+
+            <div class="success-icon" id="pdfSuccessIcon">✓</div>
+            <button class="download-btn" id="pdfDownloadBtn">Download PowerPoint</button>
+            <div class="error-message" id="pdfErrorMessage"></div>
+        </div>
+
+        <!-- Images to H5P Tab Content -->
+        <div class="tab-content" id="images-to-h5p">
+            <h1>Images to H5P</h1>
+            <p class="subtitle">Convert your images to H5P interactive content</p>
+
+            <form id="h5pUploadForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="h5pUploadArea">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Click to upload or drag and drop</div>
+                    <div class="upload-hint">Multiple image files (PNG, JPG, JPEG, GIF)</div>
+                    <input type="file" name="image_files" id="imageFiles" accept="image/*" multiple required>
+                </div>
+                <div class="file-list" id="h5pFileList"></div>
+
+                <div class="options-group" id="h5pOptions">
+                    <label class="option-label">Content Type</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="contentTypePresentation" name="content_type" value="presentation" checked>
+                            <label for="contentTypePresentation">Presentation</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="contentTypeBook" name="content_type" value="interactive-book">
+                            <label for="contentTypeBook">Interactive Book</label>
+                        </div>
+                    </div>
+
+                    <label class="option-label">Image Alignment</label>
+                    <div class="radio-group">
+                        <div class="radio-option">
+                            <input type="radio" id="alignLeft" name="alignment" value="left">
+                            <label for="alignLeft">Left</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="alignMiddle" name="alignment" value="middle" checked>
+                            <label for="alignMiddle">Middle</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="alignRight" name="alignment" value="right">
+                            <label for="alignRight">Right</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="alignFullscreen" name="alignment" value="fullscreen">
+                            <label for="alignFullscreen">Fullscreen</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="convert-btn" id="h5pConvertBtn">Convert to H5P</button>
+            </form>
+
+            <div class="progress-container" id="h5pProgressContainer">
+                <div class="progress-label">
+                    <span id="h5pProgressLabel">Processing...</span>
+                    <span id="h5pProgressPercent">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="h5pProgressBar"></div>
+                </div>
+                <div class="status-message" id="h5pStatusMessage"></div>
+            </div>
+
+            <div class="success-icon" id="h5pSuccessIcon">✓</div>
+            <button class="download-btn" id="h5pDownloadBtn">Download H5P</button>
+            <div class="error-message" id="h5pErrorMessage"></div>
+        </div>
     </div>
 
     <script>
-        const uploadArea = document.getElementById('uploadArea');
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+
+                tab.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+
+        // ===== PDF to PPTX Tab =====
+        const pdfUploadArea = document.getElementById('pdfUploadArea');
         const pdfFile = document.getElementById('pdfFile');
-        const fileName = document.getElementById('fileName');
-        const convertBtn = document.getElementById('convertBtn');
-        const uploadForm = document.getElementById('uploadForm');
-        const progressContainer = document.getElementById('progressContainer');
-        const progressBar = document.getElementById('progressBar');
-        const progressPercent = document.getElementById('progressPercent');
-        const progressLabel = document.getElementById('progressLabel');
-        const statusMessage = document.getElementById('statusMessage');
-        const downloadBtn = document.getElementById('downloadBtn');
-        const errorMessage = document.getElementById('errorMessage');
-        const successIcon = document.getElementById('successIcon');
+        const pdfFileName = document.getElementById('pdfFileName');
+        const pdfConvertBtn = document.getElementById('pdfConvertBtn');
+        const pdfUploadForm = document.getElementById('pdfUploadForm');
+        const pdfProgressContainer = document.getElementById('pdfProgressContainer');
+        const pdfProgressBar = document.getElementById('pdfProgressBar');
+        const pdfProgressPercent = document.getElementById('pdfProgressPercent');
+        const pdfProgressLabel = document.getElementById('pdfProgressLabel');
+        const pdfStatusMessage = document.getElementById('pdfStatusMessage');
+        const pdfDownloadBtn = document.getElementById('pdfDownloadBtn');
+        const pdfErrorMessage = document.getElementById('pdfErrorMessage');
+        const pdfSuccessIcon = document.getElementById('pdfSuccessIcon');
 
-        // Click to upload
-        uploadArea.addEventListener('click', () => pdfFile.click());
+        pdfUploadArea.addEventListener('click', () => pdfFile.click());
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
+        pdfUploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.classList.add('dragover');
+            pdfUploadArea.classList.add('dragover');
         });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
+        pdfUploadArea.addEventListener('dragleave', () => {
+            pdfUploadArea.classList.remove('dragover');
         });
 
-        uploadArea.addEventListener('drop', (e) => {
+        pdfUploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.classList.remove('dragover');
+            pdfUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type === 'application/pdf') {
                 pdfFile.files = files;
-                displayFileName(files[0]);
+                displayPdfFileName(files[0]);
             }
         });
 
-        // File input change
         pdfFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                displayFileName(e.target.files[0]);
+                displayPdfFileName(e.target.files[0]);
             }
         });
 
-        function displayFileName(file) {
-            fileName.textContent = `📎 ${file.name} (${formatFileSize(file.size)})`;
-            fileName.style.display = 'block';
-            convertBtn.style.display = 'block';
+        function displayPdfFileName(file) {
+            pdfFileName.innerHTML = `<div class="file-item">📎 ${file.name} (${formatFileSize(file.size)})</div>`;
+            pdfFileName.style.display = 'block';
+            pdfConvertBtn.style.display = 'block';
         }
 
         function formatFileSize(bytes) {
@@ -332,32 +529,28 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        // Form submission
-        uploadForm.addEventListener('submit', async (e) => {
+        pdfUploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            // Hide elements
-            convertBtn.disabled = true;
-            errorMessage.style.display = 'none';
-            downloadBtn.style.display = 'none';
-            successIcon.style.display = 'none';
+            pdfConvertBtn.disabled = true;
+            pdfErrorMessage.style.display = 'none';
+            pdfDownloadBtn.style.display = 'none';
+            pdfSuccessIcon.style.display = 'none';
 
-            // Show progress
-            progressContainer.style.display = 'block';
-            progressBar.style.width = '0%';
-            progressPercent.textContent = '0%';
-            progressLabel.textContent = 'Uploading...';
-            statusMessage.textContent = '';
+            pdfProgressContainer.style.display = 'block';
+            pdfProgressBar.style.width = '0%';
+            pdfProgressPercent.textContent = '0%';
+            pdfProgressLabel.textContent = 'Uploading...';
+            pdfStatusMessage.textContent = '';
 
-            const formData = new FormData(uploadForm);
+            const formData = new FormData(pdfUploadForm);
 
             try {
-                // Upload with progress simulation
                 let uploadProgress = 0;
                 const uploadInterval = setInterval(() => {
                     if (uploadProgress < 90) {
                         uploadProgress += 10;
-                        updateProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+                        updatePdfProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
                     }
                 }, 100);
 
@@ -367,7 +560,7 @@
                 });
 
                 clearInterval(uploadInterval);
-                updateProgress(100, 'Uploaded', 'File uploaded successfully');
+                updatePdfProgress(100, 'Uploaded', 'File uploaded successfully');
 
                 if (!response.ok) {
                     throw new Error('Upload failed');
@@ -379,57 +572,236 @@
                     throw new Error(data.error);
                 }
 
-                // Poll for conversion progress
-                pollProgress(data.task_id);
+                pollPdfProgress(data.task_id);
 
             } catch (error) {
-                showError(error.message);
-                convertBtn.disabled = false;
+                showPdfError(error.message);
+                pdfConvertBtn.disabled = false;
             }
         });
 
-        async function pollProgress(taskId) {
+        async function pollPdfProgress(taskId) {
             const pollInterval = setInterval(async () => {
                 try {
                     const response = await fetch(`/progress/${taskId}/`);
                     const data = await response.json();
 
-                    updateProgress(data.progress, data.message, data.message);
+                    updatePdfProgress(data.progress, data.message, data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
-                        showSuccess(taskId);
+                        showPdfSuccess(taskId);
                     } else if (data.status === 'error') {
                         clearInterval(pollInterval);
-                        showError(data.message);
+                        showPdfError(data.message);
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showError('Failed to check conversion status');
+                    showPdfError('Failed to check conversion status');
                 }
             }, 500);
         }
 
-        function updateProgress(percent, label, message) {
-            progressBar.style.width = percent + '%';
-            progressPercent.textContent = Math.round(percent) + '%';
-            progressLabel.textContent = label;
-            statusMessage.textContent = message;
+        function updatePdfProgress(percent, label, message) {
+            pdfProgressBar.style.width = percent + '%';
+            pdfProgressPercent.textContent = Math.round(percent) + '%';
+            pdfProgressLabel.textContent = label;
+            pdfStatusMessage.textContent = message;
         }
 
-        function showSuccess(taskId) {
-            successIcon.style.display = 'block';
-            downloadBtn.style.display = 'block';
-            downloadBtn.onclick = () => {
+        function showPdfSuccess(taskId) {
+            pdfSuccessIcon.style.display = 'block';
+            pdfDownloadBtn.style.display = 'block';
+            pdfDownloadBtn.onclick = () => {
                 window.location.href = `/download/${taskId}/`;
             };
         }
 
-        function showError(message) {
-            errorMessage.textContent = '❌ ' + message;
-            errorMessage.style.display = 'block';
-            progressContainer.style.display = 'none';
-            convertBtn.disabled = false;
+        function showPdfError(message) {
+            pdfErrorMessage.textContent = '❌ ' + message;
+            pdfErrorMessage.style.display = 'block';
+            pdfProgressContainer.style.display = 'none';
+            pdfConvertBtn.disabled = false;
+        }
+
+        // ===== Images to H5P Tab =====
+        const h5pUploadArea = document.getElementById('h5pUploadArea');
+        const imageFiles = document.getElementById('imageFiles');
+        const h5pFileList = document.getElementById('h5pFileList');
+        const h5pOptions = document.getElementById('h5pOptions');
+        const h5pConvertBtn = document.getElementById('h5pConvertBtn');
+        const h5pUploadForm = document.getElementById('h5pUploadForm');
+        const h5pProgressContainer = document.getElementById('h5pProgressContainer');
+        const h5pProgressBar = document.getElementById('h5pProgressBar');
+        const h5pProgressPercent = document.getElementById('h5pProgressPercent');
+        const h5pProgressLabel = document.getElementById('h5pProgressLabel');
+        const h5pStatusMessage = document.getElementById('h5pStatusMessage');
+        const h5pDownloadBtn = document.getElementById('h5pDownloadBtn');
+        const h5pErrorMessage = document.getElementById('h5pErrorMessage');
+        const h5pSuccessIcon = document.getElementById('h5pSuccessIcon');
+
+        let selectedImages = [];
+
+        h5pUploadArea.addEventListener('click', () => imageFiles.click());
+
+        h5pUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            h5pUploadArea.classList.add('dragover');
+        });
+
+        h5pUploadArea.addEventListener('dragleave', () => {
+            h5pUploadArea.classList.remove('dragover');
+        });
+
+        h5pUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            h5pUploadArea.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                handleImageFiles(files);
+            }
+        });
+
+        imageFiles.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleImageFiles(Array.from(e.target.files));
+            }
+        });
+
+        function handleImageFiles(files) {
+            selectedImages = files;
+            displayImageList();
+            h5pOptions.style.display = 'block';
+            h5pConvertBtn.style.display = 'block';
+        }
+
+        function displayImageList() {
+            h5pFileList.innerHTML = '';
+            selectedImages.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>📎 ${file.name} (${formatFileSize(file.size)})</span>
+                    <span class="remove-file" data-index="${index}">✕</span>
+                `;
+                h5pFileList.appendChild(fileItem);
+            });
+            h5pFileList.style.display = 'block';
+
+            document.querySelectorAll('.remove-file').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.target.getAttribute('data-index'));
+                    selectedImages.splice(index, 1);
+                    if (selectedImages.length === 0) {
+                        h5pFileList.style.display = 'none';
+                        h5pOptions.style.display = 'none';
+                        h5pConvertBtn.style.display = 'none';
+                    } else {
+                        displayImageList();
+                    }
+                });
+            });
+        }
+
+        h5pUploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            h5pConvertBtn.disabled = true;
+            h5pErrorMessage.style.display = 'none';
+            h5pDownloadBtn.style.display = 'none';
+            h5pSuccessIcon.style.display = 'none';
+
+            h5pProgressContainer.style.display = 'block';
+            h5pProgressBar.style.width = '0%';
+            h5pProgressPercent.textContent = '0%';
+            h5pProgressLabel.textContent = 'Uploading...';
+            h5pStatusMessage.textContent = '';
+
+            const formData = new FormData();
+            selectedImages.forEach(file => {
+                formData.append('image_files', file);
+            });
+            formData.append('content_type', document.querySelector('input[name="content_type"]:checked').value);
+            formData.append('alignment', document.querySelector('input[name="alignment"]:checked').value);
+            formData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
+
+            try {
+                let uploadProgress = 0;
+                const uploadInterval = setInterval(() => {
+                    if (uploadProgress < 90) {
+                        uploadProgress += 10;
+                        updateH5pProgress(uploadProgress, 'Uploading...', 'Preparing your images...');
+                    }
+                }, 100);
+
+                const response = await fetch('/images-to-h5p/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(uploadInterval);
+                updateH5pProgress(100, 'Uploaded', 'Images uploaded successfully');
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                pollH5pProgress(data.task_id);
+
+            } catch (error) {
+                showH5pError(error.message);
+                h5pConvertBtn.disabled = false;
+            }
+        });
+
+        async function pollH5pProgress(taskId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/h5p-progress/${taskId}/`);
+                    const data = await response.json();
+
+                    updateH5pProgress(data.progress, data.message, data.message);
+
+                    if (data.status === 'complete') {
+                        clearInterval(pollInterval);
+                        showH5pSuccess(taskId);
+                    } else if (data.status === 'error') {
+                        clearInterval(pollInterval);
+                        showH5pError(data.message);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    showH5pError('Failed to check conversion status');
+                }
+            }, 500);
+        }
+
+        function updateH5pProgress(percent, label, message) {
+            h5pProgressBar.style.width = percent + '%';
+            h5pProgressPercent.textContent = Math.round(percent) + '%';
+            h5pProgressLabel.textContent = label;
+            h5pStatusMessage.textContent = message;
+        }
+
+        function showH5pSuccess(taskId) {
+            h5pSuccessIcon.style.display = 'block';
+            h5pDownloadBtn.style.display = 'block';
+            h5pDownloadBtn.onclick = () => {
+                window.location.href = `/h5p-download/${taskId}/`;
+            };
+        }
+
+        function showH5pError(message) {
+            h5pErrorMessage.textContent = '❌ ' + message;
+            h5pErrorMessage.style.display = 'block';
+            h5pProgressContainer.style.display = 'none';
+            h5pConvertBtn.disabled = false;
         }
     </script>
 </body>

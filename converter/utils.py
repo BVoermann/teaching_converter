@@ -112,6 +112,7 @@ def images_to_h5p(image_paths, output_path, content_type='presentation', alignme
             minor_version = 8
             dependencies = [
                 {"machineName": "H5P.InteractiveBook", "majorVersion": 1, "minorVersion": 8},
+                {"machineName": "H5P.Column", "majorVersion": 1, "minorVersion": 16},
                 {"machineName": "H5P.AdvancedText", "majorVersion": 1, "minorVersion": 1}
             ]
 
@@ -228,19 +229,35 @@ def create_interactive_book_content(image_files, alignment):
 
     chapters = []
     for i, img_data in enumerate(image_files):
-        # Create a proper Advanced Text (HTML) content with the image
+        # Create chapter with Column layout containing AdvancedText with image
         chapter = {
             "title": f"Image {i + 1}",
             "content": {
-                "library": "H5P.AdvancedText 1.1",
+                "library": "H5P.Column 1.16",
                 "params": {
-                    "text": f'<p style="text-align: {css_align};"><img src="images/{img_data["filename"]}" alt="Image {i + 1}" style="width: {img_width}; height: auto; max-width: 100%;" /></p>'
+                    "content": [
+                        {
+                            "content": {
+                                "library": "H5P.AdvancedText 1.1",
+                                "params": {
+                                    "text": f'<p style="text-align: {css_align};"><img src="images/{img_data["filename"]}" alt="Image {i + 1}" style="width: {img_width}; height: auto; max-width: 100%;" /></p>'
+                                },
+                                "subContentId": f"text-{i}",
+                                "metadata": {
+                                    "contentType": "Text",
+                                    "license": "U",
+                                    "title": f"Image {i + 1}"
+                                }
+                            },
+                            "useSeparator": "auto"
+                        }
+                    ]
                 },
-                "subContentId": f"text-{i}",
+                "subContentId": f"column-{i}",
                 "metadata": {
-                    "contentType": "Text",
+                    "contentType": "Column",
                     "license": "U",
-                    "title": f"Image {i + 1}"
+                    "title": f"Chapter {i + 1}"
                 }
             }
         }
