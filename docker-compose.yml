@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pdf_to_pptx_app
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount the current directory to /app in the container (for development)
+      - .:/app
+      # Mount media directory for persistent file storage
+      - ./media:/app/media
+      # Mount database file for persistence
+      - ./db.sqlite3:/app/db.sqlite3
+    environment:
+      - DJANGO_SETTINGS_MODULE=pdf_to_pptx.settings
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    # Health check to ensure the service is running
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
