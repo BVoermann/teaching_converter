@@ -352,7 +352,7 @@
                 <span>📄 PDF to PowerPoint</span>
             </div>
             <div class="tab" data-tab="images-to-h5p">
-                <span>🖼️ Images to H5P</span>
+                <span>🖼️ Images or Presentations to H5P</span>
             </div>
         </div>
 
@@ -391,8 +391,8 @@
 
         <!-- Images to H5P Tab Content -->
         <div class="tab-content" id="images-to-h5p">
-            <h1>Images to H5P</h1>
-            <p class="subtitle">Convert your images to H5P interactive content</p>
+            <h1>Images or Presentations to H5P</h1>
+            <p class="subtitle">Convert your images or PPTX presentations to H5P interactive content</p>
 
             <form id="h5pUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
@@ -405,18 +405,6 @@
                 <div class="file-list" id="h5pFileList"></div>
 
                 <div class="options-group" id="h5pOptions">
-                    <label class="option-label">Content Type</label>
-                    <div class="radio-group">
-                        <div class="radio-option">
-                            <input type="radio" id="contentTypePresentation" name="content_type" value="presentation" checked>
-                            <label for="contentTypePresentation">Presentation</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="contentTypeBook" name="content_type" value="interactive-book">
-                            <label for="contentTypeBook">Interactive Book</label>
-                        </div>
-                    </div>
-
                     <label class="option-label">Image Alignment</label>
                     <div class="radio-group">
                         <div class="radio-option">
@@ -737,7 +725,7 @@
             selectedImages.forEach(file => {
                 formData.append('image_files', file);
             });
-            formData.append('content_type', document.querySelector('input[name="content_type"]:checked').value);
+            formData.append('content_type', 'presentation');  // Always use presentation
             formData.append('alignment', document.querySelector('input[name="alignment"]:checked').value);
             formData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
 
