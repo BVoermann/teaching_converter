@@ -6,6 +6,7 @@ import tempfile
 import json
 import zipfile
 import base64
+import subprocess
 from PIL import Image
 
 
@@ -48,6 +49,69 @@ def pdf_to_pptx(pdf_path, output_path, progress_callback=None):
         prs.save(output_path)
 
     return output_path
+
+
+def pptx_to_images(pptx_path, output_dir, progress_callback=None):
+    """
+    Convert PPTX slides to images using LibreOffice and pdf2image
+
+    Args:
+        pptx_path: Path to PPTX file
+        output_dir: Directory where images will be saved
+        progress_callback: Optional callback for progress updates
+
+    Returns:
+        List of image file paths
+    """
+    image_paths = []
+
+    with tempfile.TemporaryDirectory() as temp_pdf_dir:
+        # Step 1: Convert PPTX to PDF using LibreOffice
+        try:
+            result = subprocess.run(
+                ['soffice', '--headless', '--convert-to', 'pdf', '--outdir', temp_pdf_dir, pptx_path],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
+
+            if result.returncode != 0:
+                raise Exception(f"LibreOffice conversion failed: {result.stderr}")
+
+            # Find the generated PDF file
+            pdf_filename = os.path.splitext(os.path.basename(pptx_path))[0] + '.pdf'
+            pdf_path = os.path.join(temp_pdf_dir, pdf_filename)
+
+            if not os.path.exists(pdf_path):
+                raise Exception(f"PDF file not generated: {pdf_path}")
+
+        except subprocess.TimeoutExpired:
+            raise Exception("PPTX conversion timeout (exceeded 5 minutes)")
+        except FileNotFoundError:
+            raise Exception("LibreOffice (soffice) not found. Please ensure LibreOffice is installed.")
+        except Exception as e:
+            raise Exception(f"Error converting PPTX to PDF: {str(e)}")
+
+        # Step 2: Convert PDF to images using pdf2image
+        try:
+            images = convert_from_path(pdf_path, dpi=150)
+            total_slides = len(images)
+
+            for i, image in enumerate(images):
+                # Save each slide as an image
+                img_filename = f'pptx_slide_{i}.png'
+                img_path = os.path.join(output_dir, img_filename)
+                image.save(img_path, 'PNG')
+                image_paths.append(img_path)
+
+                # Report progress
+                if progress_callback:
+                    progress_callback(i + 1, total_slides, 'Converting PPTX slides')
+
+        except Exception as e:
+            raise Exception(f"Error converting PDF to images: {str(e)}")
+
+    return image_paths
 
 
 def images_to_h5p(image_paths, output_path, content_type='presentation', alignment='middle', progress_callback=None):

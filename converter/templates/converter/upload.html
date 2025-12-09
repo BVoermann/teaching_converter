@@ -399,8 +399,8 @@
                 <div class="upload-area" id="h5pUploadArea">
                     <div class="upload-icon">🖼️</div>
                     <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">Multiple image files (PNG, JPG, JPEG, GIF)</div>
-                    <input type="file" name="image_files" id="imageFiles" accept="image/*" multiple required>
+                    <div class="upload-hint">Multiple image and PPTX files</div>
+                    <input type="file" name="image_files" id="imageFiles" accept="image/*,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple>
                 </div>
                 <div class="file-list" id="h5pFileList"></div>
 
@@ -656,19 +656,23 @@
         h5pUploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             h5pUploadArea.classList.remove('dragover');
-            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+            const files = Array.from(e.dataTransfer.files).filter(f =>
+                f.type.startsWith('image/') ||
+                f.name.toLowerCase().endsWith('.pptx') ||
+                f.type.includes('presentationml')
+            );
             if (files.length > 0) {
-                handleImageFiles(files);
+                handleFiles(files);
             }
         });
 
         imageFiles.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                handleImageFiles(Array.from(e.target.files));
+                handleFiles(Array.from(e.target.files));
             }
         });
 
-        function handleImageFiles(files) {
+        function handleFiles(files) {
             selectedImages = files;
             displayImageList();
             h5pOptions.style.display = 'block';
@@ -678,10 +682,15 @@
         function displayImageList() {
             h5pFileList.innerHTML = '';
             selectedImages.forEach((file, index) => {
+                const isPptx = file.name.toLowerCase().endsWith('.pptx') ||
+                               file.type.includes('presentationml');
+                const icon = isPptx ? '📄' : '🖼️';
+                const fileType = isPptx ? ' (PPTX)' : '';
+
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.innerHTML = `
-                    <span>📎 ${file.name} (${formatFileSize(file.size)})</span>
+                    <span>${icon} ${file.name}${fileType} (${formatFileSize(file.size)})</span>
                     <span class="remove-file" data-index="${index}">✕</span>
                 `;
                 h5pFileList.appendChild(fileItem);
@@ -705,6 +714,13 @@
 
         h5pUploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Validate that files are selected
+            if (!selectedImages || selectedImages.length === 0) {
+                h5pErrorMessage.textContent = 'Please select at least one file to convert.';
+                h5pErrorMessage.style.display = 'block';
+                return;
+            }
 
             h5pConvertBtn.disabled = true;
             h5pErrorMessage.style.display = 'none';

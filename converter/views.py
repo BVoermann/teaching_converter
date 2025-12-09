@@ -2,10 +2,12 @@ from django.shortcuts import render
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
-from .utils import pdf_to_pptx, images_to_h5p
+from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images
 import os
 import uuid
 import threading
+import tempfile
+import shutil
 
 # Global dictionary to track conversion progress
 conversion_progress = {}
@@ -118,13 +120,60 @@ def upload_images_to_h5p(request):
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
-        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading images...'}
+        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+
+        # Separate PPTX files from image files
+        pptx_files = []
+        regular_images = []
+
+        for file in image_files:
+            is_pptx = (
+                file.name.lower().endswith('.pptx') or
+                file.content_type == 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+            )
+            if is_pptx:
+                pptx_files.append(file)
+            else:
+                regular_images.append(file)
 
         # Save uploaded images
         fs = FileSystemStorage()
         image_paths = []
+        temp_dirs = []  # Track temp directories for cleanup
 
-        for image_file in image_files:
+        # Process PPTX files to extract slide images
+        if pptx_files:
+            total_pptx = len(pptx_files)
+            for idx, pptx_file in enumerate(pptx_files):
+                h5p_conversion_progress[task_id] = {
+                    'status': 'converting',
+                    'progress': 10 + int((idx / total_pptx) * 30),
+                    'message': f'Converting PPTX {idx + 1} of {total_pptx}...'
+                }
+
+                # Save PPTX temporarily
+                pptx_filename = fs.save(pptx_file.name, pptx_file)
+                pptx_path = fs.path(pptx_filename)
+
+                try:
+                    # Create temp dir for converted images
+                    temp_images_dir = tempfile.mkdtemp()
+                    temp_dirs.append(temp_images_dir)
+
+                    # Convert PPTX to images
+                    slide_images = pptx_to_images(pptx_path, temp_images_dir)
+                    image_paths.extend(slide_images)
+
+                    # Cleanup PPTX file
+                    os.remove(pptx_path)
+                except Exception as e:
+                    # Log error but continue with other files
+                    print(f"Error converting {pptx_file.name}: {str(e)}")
+                    if os.path.exists(pptx_path):
+                        os.remove(pptx_path)
+
+        # Save regular uploaded images
+        for image_file in regular_images:
             filename = fs.save(image_file.name, image_file)
             image_paths.append(fs.path(filename))
 
@@ -132,12 +181,13 @@ def upload_images_to_h5p(request):
         output_filename = f'h5p_content_{task_id}.h5p'
         output_path = fs.path(output_filename)
 
-        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 40, 'message': 'Creating H5P package...'}
 
         try:
             # Convert images to H5P with progress callback
             def progress_callback(current, total, message='Processing'):
-                progress = 10 + int((current / total) * 80)
+                # Adjust progress: 40-90% for H5P conversion
+                progress = 40 + int((current / total) * 50)
                 h5p_conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
@@ -154,11 +204,19 @@ def upload_images_to_h5p(request):
                 'output_path': output_path
             }
 
-            # Clean up uploaded images
+            # Clean up uploaded images and temp directories
             for img_path in image_paths:
                 if os.path.exists(img_path):
                     try:
                         os.remove(img_path)
+                    except:
+                        pass
+
+            # Clean up temporary directories
+            for temp_dir in temp_dirs:
+                if os.path.exists(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir)
                     except:
                         pass
 
@@ -170,6 +228,14 @@ def upload_images_to_h5p(request):
                 if os.path.exists(img_path):
                     try:
                         os.remove(img_path)
+                    except:
+                        pass
+
+            # Clean up temporary directories
+            for temp_dir in temp_dirs:
+                if os.path.exists(temp_dir):
+                    try:
+                        shutil.rmtree(temp_dir)
                     except:
                         pass
 
