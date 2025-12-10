@@ -50,7 +50,8 @@ def upload_pdf(request):
                 'progress': 100,
                 'message': 'Conversion complete!',
                 'output_filename': output_filename,
-                'output_path': output_path
+                'output_path': output_path,
+                'pdf_path': pdf_path
             }
 
             # Return task ID for client to poll
@@ -99,6 +100,10 @@ def download_file(request, task_id):
                     try:
                         if os.path.exists(output_path):
                             os.remove(output_path)
+                        # Delete original PDF file
+                        pdf_path = progress_data.get('pdf_path')
+                        if pdf_path and os.path.exists(pdf_path):
+                            os.remove(pdf_path)
                         # Remove from progress dict
                         if task_id in conversion_progress:
                             del conversion_progress[task_id]
@@ -201,24 +206,10 @@ def upload_images_to_h5p(request):
                 'progress': 100,
                 'message': 'Conversion complete!',
                 'output_filename': output_filename,
-                'output_path': output_path
+                'output_path': output_path,
+                'image_paths': image_paths,
+                'temp_dirs': temp_dirs
             }
-
-            # Clean up uploaded images and temp directories
-            for img_path in image_paths:
-                if os.path.exists(img_path):
-                    try:
-                        os.remove(img_path)
-                    except:
-                        pass
-
-            # Clean up temporary directories
-            for temp_dir in temp_dirs:
-                if os.path.exists(temp_dir):
-                    try:
-                        shutil.rmtree(temp_dir)
-                    except:
-                        pass
 
             return JsonResponse({'task_id': task_id})
 
@@ -278,6 +269,22 @@ def download_h5p_file(request, task_id):
                     try:
                         if os.path.exists(output_path):
                             os.remove(output_path)
+                        # Clean up uploaded images
+                        image_paths = progress_data.get('image_paths', [])
+                        for img_path in image_paths:
+                            if os.path.exists(img_path):
+                                try:
+                                    os.remove(img_path)
+                                except:
+                                    pass
+                        # Clean up temporary directories
+                        temp_dirs = progress_data.get('temp_dirs', [])
+                        for temp_dir in temp_dirs:
+                            if os.path.exists(temp_dir):
+                                try:
+                                    shutil.rmtree(temp_dir)
+                                except:
+                                    pass
                         # Remove from progress dict
                         if task_id in h5p_conversion_progress:
                             del h5p_conversion_progress[task_id]
