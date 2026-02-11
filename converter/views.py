@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
-from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images
+from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type
 import os
 import uuid
 import threading
@@ -12,6 +12,7 @@ import shutil
 # Global dictionary to track conversion progress
 conversion_progress = {}
 h5p_conversion_progress = {}
+compress_conversion_progress = {}
 
 
 def upload_pdf(request):
@@ -114,7 +115,7 @@ def download_file(request, task_id):
 
                 return response
 
-    return HttpResponse('File not found', status=404)
+    return HttpResponse('PPTX file not found', status=404)
 
 
 def upload_images_to_h5p(request):
@@ -288,6 +289,121 @@ def download_h5p_file(request, task_id):
                         # Remove from progress dict
                         if task_id in h5p_conversion_progress:
                             del h5p_conversion_progress[task_id]
+                    except:
+                        pass
+
+                threading.Thread(target=cleanup).start()
+
+                return response
+
+    return HttpResponse('H5P file not found', status=404)
+
+
+def upload_compress(request):
+    if request.method == 'POST' and request.FILES.getlist('compress_files'):
+        uploaded_files = request.FILES.getlist('compress_files')
+
+        # Generate unique task ID
+        task_id = str(uuid.uuid4())
+        compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+
+        # Save uploaded files and filter to supported types
+        fs = FileSystemStorage()
+        file_paths = []
+
+        for f in uploaded_files:
+            if get_file_type(f.name) is not None:
+                filename = fs.save(f.name, f)
+                file_paths.append(fs.path(filename))
+
+        if not file_paths:
+            compress_conversion_progress[task_id] = {
+                'status': 'error',
+                'progress': 0,
+                'message': 'No supported files found. Please upload images, videos, or audio files.'
+            }
+            return JsonResponse({'task_id': task_id, 'error': 'No supported files'}, status=400)
+
+        # Create output filename
+        output_filename = f'compressed_{task_id}.zip'
+        output_path = fs.path(output_filename)
+
+        compress_conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting compression...'}
+
+        try:
+            def progress_callback(current, total):
+                progress = 10 + int((current / total) * 80)
+                compress_conversion_progress[task_id] = {
+                    'status': 'converting',
+                    'progress': progress,
+                    'message': f'Compressing file {current} of {total}...'
+                }
+
+            compress_files(file_paths, output_path, progress_callback)
+
+            compress_conversion_progress[task_id] = {
+                'status': 'complete',
+                'progress': 100,
+                'message': 'Compression complete!',
+                'output_filename': output_filename,
+                'output_path': output_path,
+                'file_paths': file_paths
+            }
+
+            return JsonResponse({'task_id': task_id})
+
+        except Exception as e:
+            for path in file_paths:
+                if os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except:
+                        pass
+
+            compress_conversion_progress[task_id] = {
+                'status': 'error',
+                'progress': 0,
+                'message': f'Error: {str(e)}'
+            }
+            return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
+
+    return render(request, 'converter/upload.html')
+
+
+def check_compress_progress(request, task_id):
+    if task_id in compress_conversion_progress:
+        return JsonResponse(compress_conversion_progress[task_id])
+    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+
+
+def download_compress_file(request, task_id):
+    if task_id in compress_conversion_progress:
+        progress_data = compress_conversion_progress[task_id]
+        if progress_data['status'] == 'complete':
+            output_path = progress_data['output_path']
+            output_filename = progress_data['output_filename']
+
+            if os.path.exists(output_path):
+                response = FileResponse(
+                    open(output_path, 'rb'),
+                    content_type='application/zip'
+                )
+                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+
+                def cleanup():
+                    import time
+                    time.sleep(5)
+                    try:
+                        if os.path.exists(output_path):
+                            os.remove(output_path)
+                        for path in progress_data.get('file_paths', []):
+                            if os.path.exists(path):
+                                try:
+                                    os.remove(path)
+                                except:
+                                    pass
+                        if task_id in compress_conversion_progress:
+                            del compress_conversion_progress[task_id]
                     except:
                         pass
 

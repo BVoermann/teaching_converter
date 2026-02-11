@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install -y \
     # Image processing libraries
     libjpeg-dev \
     libpng-dev \
+    # FFmpeg for video/audio compression
+    ffmpeg \
     # Other useful tools
     curl \
     && rm -rf /var/lib/apt/lists/*

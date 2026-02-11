@@ -7,6 +7,7 @@ import json
 import zipfile
 import base64
 import subprocess
+import shutil
 from PIL import Image
 
 
@@ -416,3 +417,119 @@ def create_interactive_book_content(image_files, alignment):
         "pageLabel": "Page",
         "readspeakerProgress": "@pages of @total pages"
     }
+
+
+IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff', '.tif'}
+VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.wmv', '.flv'}
+AUDIO_EXTENSIONS = {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma'}
+
+
+def get_file_type(filename):
+    ext = os.path.splitext(filename)[1].lower()
+    if ext in IMAGE_EXTENSIONS:
+        return 'image'
+    if ext in VIDEO_EXTENSIONS:
+        return 'video'
+    if ext in AUDIO_EXTENSIONS:
+        return 'audio'
+    return None
+
+
+def compress_image(input_path, output_path):
+    img = Image.open(input_path)
+
+    # Resize if any dimension exceeds 4096px
+    max_dim = 4096
+    if img.width > max_dim or img.height > max_dim:
+        ratio = min(max_dim / img.width, max_dim / img.height)
+        new_size = (int(img.width * ratio), int(img.height * ratio))
+        img = img.resize(new_size, Image.LANCZOS)
+
+    # Handle transparency: keep as PNG, otherwise save as JPEG
+    if img.mode in ('RGBA', 'LA', 'P'):
+        img.save(output_path, 'PNG', optimize=True)
+    else:
+        if img.mode != 'RGB':
+            img = img.convert('RGB')
+        img.save(output_path, 'JPEG', quality=70, optimize=True)
+
+    return output_path
+
+
+def compress_video(input_path, output_path):
+    result = subprocess.run(
+        [
+            'ffmpeg', '-i', input_path,
+            '-vcodec', 'libx264', '-crf', '28',
+            '-acodec', 'aac', '-b:a', '128k',
+            '-vf', 'scale=min(iw\\,1920):min(ih\\,1080):force_original_aspect_ratio=decrease',
+            '-movflags', '+faststart',
+            '-y', output_path
+        ],
+        capture_output=True, text=True, timeout=600
+    )
+    if result.returncode != 0:
+        raise Exception(f"FFmpeg video compression failed: {result.stderr}")
+    return output_path
+
+
+def compress_audio(input_path, output_path):
+    result = subprocess.run(
+        [
+            'ffmpeg', '-i', input_path,
+            '-acodec', 'libmp3lame', '-b:a', '128k',
+            '-ar', '44100',
+            '-y', output_path
+        ],
+        capture_output=True, text=True, timeout=300
+    )
+    if result.returncode != 0:
+        raise Exception(f"FFmpeg audio compression failed: {result.stderr}")
+    return output_path
+
+
+def compress_files(file_paths, output_zip_path, progress_callback=None):
+    total = len(file_paths)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        compressed_paths = []
+
+        for i, file_path in enumerate(file_paths):
+            filename = os.path.basename(file_path)
+            file_type = get_file_type(filename)
+            name, ext = os.path.splitext(filename)
+
+            if file_type == 'image':
+                # Output as .jpg unless it has transparency (handled inside compress_image)
+                has_alpha = ext.lower() in ('.png', '.gif', '.tiff', '.tif', '.webp')
+                if has_alpha:
+                    try:
+                        img = Image.open(file_path)
+                        has_alpha = img.mode in ('RGBA', 'LA', 'P')
+                        img.close()
+                    except:
+                        has_alpha = False
+                out_ext = '.png' if has_alpha else '.jpg'
+                out_path = os.path.join(temp_dir, name + out_ext)
+                compress_image(file_path, out_path)
+                compressed_paths.append(out_path)
+
+            elif file_type == 'video':
+                out_path = os.path.join(temp_dir, name + '.mp4')
+                compress_video(file_path, out_path)
+                compressed_paths.append(out_path)
+
+            elif file_type == 'audio':
+                out_path = os.path.join(temp_dir, name + '.mp3')
+                compress_audio(file_path, out_path)
+                compressed_paths.append(out_path)
+
+            if progress_callback:
+                progress_callback(i + 1, total)
+
+        # Create zip of all compressed files
+        with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for path in compressed_paths:
+                zipf.write(path, os.path.basename(path))
+
+    return output_zip_path
