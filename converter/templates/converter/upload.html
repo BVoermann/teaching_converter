@@ -357,6 +357,9 @@
             <div class="tab" data-tab="compress-files">
                 <span>📦 Compress Files</span>
             </div>
+            <div class="tab" data-tab="pdf-to-images">
+                <span>🖼️ PDF to Images</span>
+            </div>
         </div>
 
         <!-- PDF to PPTX Tab Content -->
@@ -446,6 +449,39 @@
             <div class="success-icon" id="h5pSuccessIcon">✓</div>
             <button class="download-btn" id="h5pDownloadBtn">Download H5P</button>
             <div class="error-message" id="h5pErrorMessage"></div>
+        </div>
+
+        <!-- PDF to Images Tab Content -->
+        <div class="tab-content" id="pdf-to-images">
+            <h1>PDF to Images</h1>
+            <p class="subtitle">Convert each page of your PDF to a PNG image</p>
+
+            <form id="pdfImagesUploadForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="pdfImagesUploadArea">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Click to upload or drag and drop</div>
+                    <div class="upload-hint">PDF files only</div>
+                    <input type="file" name="pdf_file_images" id="pdfImagesFile" accept=".pdf" required>
+                </div>
+                <div class="file-list" id="pdfImagesFileName"></div>
+                <button type="submit" class="convert-btn" id="pdfImagesConvertBtn">Convert to Images</button>
+            </form>
+
+            <div class="progress-container" id="pdfImagesProgressContainer">
+                <div class="progress-label">
+                    <span id="pdfImagesProgressLabel">Processing...</span>
+                    <span id="pdfImagesProgressPercent">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="pdfImagesProgressBar"></div>
+                </div>
+                <div class="status-message" id="pdfImagesStatusMessage"></div>
+            </div>
+
+            <div class="success-icon" id="pdfImagesSuccessIcon">✓</div>
+            <button class="download-btn" id="pdfImagesDownloadBtn">Download Images (ZIP)</button>
+            <div class="error-message" id="pdfImagesErrorMessage"></div>
         </div>
 
         <!-- Compress Files Tab Content -->
@@ -1037,6 +1073,149 @@
             compressErrorMessage.style.display = 'block';
             compressProgressContainer.style.display = 'none';
             compressBtn.disabled = false;
+        }
+
+        // ===== PDF to Images Tab =====
+        const pdfImagesUploadArea = document.getElementById('pdfImagesUploadArea');
+        const pdfImagesFile = document.getElementById('pdfImagesFile');
+        const pdfImagesFileName = document.getElementById('pdfImagesFileName');
+        const pdfImagesConvertBtn = document.getElementById('pdfImagesConvertBtn');
+        const pdfImagesUploadForm = document.getElementById('pdfImagesUploadForm');
+        const pdfImagesProgressContainer = document.getElementById('pdfImagesProgressContainer');
+        const pdfImagesProgressBar = document.getElementById('pdfImagesProgressBar');
+        const pdfImagesProgressPercent = document.getElementById('pdfImagesProgressPercent');
+        const pdfImagesProgressLabel = document.getElementById('pdfImagesProgressLabel');
+        const pdfImagesStatusMessage = document.getElementById('pdfImagesStatusMessage');
+        const pdfImagesDownloadBtn = document.getElementById('pdfImagesDownloadBtn');
+        const pdfImagesErrorMessage = document.getElementById('pdfImagesErrorMessage');
+        const pdfImagesSuccessIcon = document.getElementById('pdfImagesSuccessIcon');
+
+        pdfImagesUploadArea.addEventListener('click', () => pdfImagesFile.click());
+
+        pdfImagesUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            pdfImagesUploadArea.classList.add('dragover');
+        });
+
+        pdfImagesUploadArea.addEventListener('dragleave', () => {
+            pdfImagesUploadArea.classList.remove('dragover');
+        });
+
+        pdfImagesUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            pdfImagesUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                pdfImagesFile.files = files;
+                displayPdfImagesFileName(files[0]);
+            }
+        });
+
+        pdfImagesFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                displayPdfImagesFileName(e.target.files[0]);
+            }
+        });
+
+        function displayPdfImagesFileName(file) {
+            pdfImagesFileName.innerHTML = `<div class="file-item">📎 ${file.name} (${formatFileSize(file.size)})</div>`;
+            pdfImagesFileName.style.display = 'block';
+            pdfImagesConvertBtn.style.display = 'block';
+        }
+
+        pdfImagesUploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            pdfImagesConvertBtn.disabled = true;
+            pdfImagesErrorMessage.style.display = 'none';
+            pdfImagesDownloadBtn.style.display = 'none';
+            pdfImagesSuccessIcon.style.display = 'none';
+
+            pdfImagesProgressContainer.style.display = 'block';
+            pdfImagesProgressBar.style.width = '0%';
+            pdfImagesProgressPercent.textContent = '0%';
+            pdfImagesProgressLabel.textContent = 'Uploading...';
+            pdfImagesStatusMessage.textContent = '';
+
+            const formData = new FormData(pdfImagesUploadForm);
+
+            try {
+                let uploadProgress = 0;
+                const uploadInterval = setInterval(() => {
+                    if (uploadProgress < 90) {
+                        uploadProgress += 10;
+                        updatePdfImagesProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+                    }
+                }, 100);
+
+                const response = await fetch('/pdf-to-images/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(uploadInterval);
+                updatePdfImagesProgress(100, 'Uploaded', 'File uploaded successfully');
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                pollPdfImagesProgress(data.task_id);
+
+            } catch (error) {
+                showPdfImagesError(error.message);
+                pdfImagesConvertBtn.disabled = false;
+            }
+        });
+
+        async function pollPdfImagesProgress(taskId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/pdf-images-progress/${taskId}/`);
+                    const data = await response.json();
+
+                    updatePdfImagesProgress(data.progress, data.message, data.message);
+
+                    if (data.status === 'complete') {
+                        clearInterval(pollInterval);
+                        showPdfImagesSuccess(taskId);
+                    } else if (data.status === 'error') {
+                        clearInterval(pollInterval);
+                        showPdfImagesError(data.message);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    showPdfImagesError('Failed to check conversion status');
+                }
+            }, 500);
+        }
+
+        function updatePdfImagesProgress(percent, label, message) {
+            pdfImagesProgressBar.style.width = percent + '%';
+            pdfImagesProgressPercent.textContent = Math.round(percent) + '%';
+            pdfImagesProgressLabel.textContent = label;
+            pdfImagesStatusMessage.textContent = message;
+        }
+
+        function showPdfImagesSuccess(taskId) {
+            pdfImagesSuccessIcon.style.display = 'block';
+            pdfImagesDownloadBtn.style.display = 'block';
+            pdfImagesDownloadBtn.onclick = () => {
+                window.location.href = `/pdf-images-download/${taskId}/`;
+            };
+        }
+
+        function showPdfImagesError(message) {
+            pdfImagesErrorMessage.textContent = '❌ ' + message;
+            pdfImagesErrorMessage.style.display = 'block';
+            pdfImagesProgressContainer.style.display = 'none';
+            pdfImagesConvertBtn.disabled = false;
         }
     </script>
 </body>

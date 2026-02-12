@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
-from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type
+from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type, pdf_to_images_zip
 import os
 import uuid
 import threading
@@ -13,6 +13,7 @@ import shutil
 conversion_progress = {}
 h5p_conversion_progress = {}
 compress_conversion_progress = {}
+pdf_images_progress = {}
 
 
 def upload_pdf(request):
@@ -404,6 +405,98 @@ def download_compress_file(request, task_id):
                                     pass
                         if task_id in compress_conversion_progress:
                             del compress_conversion_progress[task_id]
+                    except:
+                        pass
+
+                threading.Thread(target=cleanup).start()
+
+                return response
+
+    return HttpResponse('File not found', status=404)
+
+
+def upload_pdf_images(request):
+    if request.method == 'POST' and request.FILES.get('pdf_file_images'):
+        pdf_file = request.FILES['pdf_file_images']
+
+        task_id = str(uuid.uuid4())
+        pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
+
+        fs = FileSystemStorage()
+        pdf_filename = fs.save(pdf_file.name, pdf_file)
+        pdf_path = fs.path(pdf_filename)
+
+        output_filename = f'pdf_images_{task_id}.zip'
+        output_path = fs.path(output_filename)
+
+        pdf_images_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+
+        try:
+            def progress_callback(current, total):
+                progress = 10 + int((current / total) * 80)
+                pdf_images_progress[task_id] = {
+                    'status': 'converting',
+                    'progress': progress,
+                    'message': f'Converting page {current} of {total}...'
+                }
+
+            pdf_to_images_zip(pdf_path, output_path, progress_callback)
+
+            pdf_images_progress[task_id] = {
+                'status': 'complete',
+                'progress': 100,
+                'message': 'Conversion complete!',
+                'output_filename': output_filename,
+                'output_path': output_path,
+                'pdf_path': pdf_path
+            }
+
+            return JsonResponse({'task_id': task_id})
+
+        except Exception as e:
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+            pdf_images_progress[task_id] = {
+                'status': 'error',
+                'progress': 0,
+                'message': f'Error: {str(e)}'
+            }
+            return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
+
+    return render(request, 'converter/upload.html')
+
+
+def check_pdf_images_progress(request, task_id):
+    if task_id in pdf_images_progress:
+        return JsonResponse(pdf_images_progress[task_id])
+    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+
+
+def download_pdf_images_file(request, task_id):
+    if task_id in pdf_images_progress:
+        progress_data = pdf_images_progress[task_id]
+        if progress_data['status'] == 'complete':
+            output_path = progress_data['output_path']
+            output_filename = progress_data['output_filename']
+
+            if os.path.exists(output_path):
+                response = FileResponse(
+                    open(output_path, 'rb'),
+                    content_type='application/zip'
+                )
+                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+
+                def cleanup():
+                    import time
+                    time.sleep(5)
+                    try:
+                        if os.path.exists(output_path):
+                            os.remove(output_path)
+                        pdf_path = progress_data.get('pdf_path')
+                        if pdf_path and os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+                        if task_id in pdf_images_progress:
+                            del pdf_images_progress[task_id]
                     except:
                         pass
 

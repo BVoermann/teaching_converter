@@ -419,6 +419,38 @@ def create_interactive_book_content(image_files, alignment):
     }
 
 
+def pdf_to_images_zip(pdf_path, output_zip_path, progress_callback=None):
+    """
+    Convert PDF pages to PNG images and package them in a ZIP file.
+
+    Args:
+        pdf_path: Path to the PDF file
+        output_zip_path: Path where the .zip file will be saved
+        progress_callback: Optional callback(current, total)
+
+    Returns:
+        output_zip_path
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        images = convert_from_path(pdf_path, dpi=150)
+        total_pages = len(images)
+
+        png_paths = []
+        for i, image in enumerate(images):
+            img_path = os.path.join(temp_dir, f'page_{i + 1}.png')
+            image.save(img_path, 'PNG')
+            png_paths.append(img_path)
+
+            if progress_callback:
+                progress_callback(i + 1, total_pages)
+
+        with zipfile.ZipFile(output_zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for path in png_paths:
+                zipf.write(path, os.path.basename(path))
+
+    return output_zip_path
+
+
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff', '.tif'}
 VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.wmv', '.flv'}
 AUDIO_EXTENSIONS = {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma'}

@@ -11,4 +11,7 @@ urlpatterns = [
     path('compress-files/', views.upload_compress, name='upload_compress'),
     path('compress-progress/<str:task_id>/', views.check_compress_progress, name='check_compress_progress'),
     path('compress-download/<str:task_id>/', views.download_compress_file, name='download_compress_file'),
+    path('pdf-to-images/', views.upload_pdf_images, name='upload_pdf_images'),
+    path('pdf-images-progress/<str:task_id>/', views.check_pdf_images_progress, name='check_pdf_images_progress'),
+    path('pdf-images-download/<str:task_id>/', views.download_pdf_images_file, name='download_pdf_images_file'),
 ]
