@@ -26,7 +26,15 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG_STATE', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['localhost', 'https://multiconverter.digi-teach.com']
+ALLOWED_HOSTS = [
+    'localhost',
+    'localhost:8000',
+    'localhost:7879',
+    'https://multiconverter.digi-teach.com',
+    'multiconverter.digi-teach.com',
+    'www.multiconverter.digi-teach.com',
+]
+
 CSRF_TRUSTED_ORIGINS = [
     'https://multiconverter.digi-teach.com',
 ]
