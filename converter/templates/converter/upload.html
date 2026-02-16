@@ -343,6 +343,130 @@
             display: none;
             text-align: center;
         }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-option {
+            position: relative;
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-option label {
+            display: block;
+            padding: 12px 16px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .checkbox-option input[type="checkbox"]:checked + label {
+            background: #f0f0ff;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .checkbox-option label:hover {
+            border-color: #667eea;
+        }
+
+        .checker-results {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .checker-results.visible {
+            display: block;
+        }
+
+        .checker-image-info {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .checker-image-info strong {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .result-card {
+            padding: 18px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 5px solid;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .result-card.good {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .result-card.minimum {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+
+        .result-card.unfit {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+        }
+
+        .result-icon {
+            font-size: 1.8em;
+            flex-shrink: 0;
+        }
+
+        .result-details {
+            flex: 1;
+        }
+
+        .result-title {
+            font-weight: 700;
+            font-size: 1.05em;
+            margin-bottom: 4px;
+        }
+
+        .result-card.good .result-title { color: #155724; }
+        .result-card.minimum .result-title { color: #856404; }
+        .result-card.unfit .result-title { color: #721c24; }
+
+        .result-description {
+            font-size: 0.9em;
+        }
+
+        .result-card.good .result-description { color: #1b5e20; }
+        .result-card.minimum .result-description { color: #7c6f00; }
+        .result-card.unfit .result-description { color: #8b1a1a; }
+
+        .result-thresholds {
+            font-size: 0.82em;
+            margin-top: 6px;
+            opacity: 0.8;
+        }
+
+        .result-card.good .result-thresholds { color: #1b5e20; }
+        .result-card.minimum .result-thresholds { color: #7c6f00; }
+        .result-card.unfit .result-thresholds { color: #8b1a1a; }
     </style>
 </head>
 <body>
@@ -359,6 +483,9 @@
             </div>
             <div class="tab" data-tab="pdf-to-images">
                 <span>🖼️ PDF to Images</span>
+            </div>
+            <div class="tab" data-tab="image-checker">
+                <span>🔍 Bildprüfer</span>
             </div>
         </div>
 
@@ -515,6 +642,50 @@
             <div class="success-icon" id="compressSuccessIcon">✓</div>
             <button class="download-btn" id="compressDownloadBtn">Download Compressed Files</button>
             <div class="error-message" id="compressErrorMessage"></div>
+        </div>
+
+        <!-- Image Checker Tab Content -->
+        <div class="tab-content" id="image-checker">
+            <h1>Bildprüfer</h1>
+            <p class="subtitle">Prüfen Sie, ob Ihr Bild die richtigen Maße für verschiedene Verwendungszwecke hat</p>
+
+            <form id="imageCheckerForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="checkerUploadArea">
+                    <div class="upload-icon">🔍</div>
+                    <div class="upload-text">Klicken oder Bild hierher ziehen</div>
+                    <div class="upload-hint">Bilddateien (JPG, PNG, etc.)</div>
+                    <input type="file" name="image_file" id="checkerFile" accept="image/*" required>
+                </div>
+                <div class="file-list" id="checkerFileName"></div>
+
+                <div class="options-group" id="checkerOptions">
+                    <label class="option-label">Verwendungszwecke auswählen:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="checkPowerpoint" name="purposes" value="powerpoint">
+                            <label for="checkPowerpoint">PowerPoint</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="checkH5p" name="purposes" value="h5p">
+                            <label for="checkH5p">H5P</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="checkWebsite" name="purposes" value="website">
+                            <label for="checkWebsite">Website</label>
+                        </div>
+                        <div class="checkbox-option">
+                            <input type="checkbox" id="checkSocial" name="purposes" value="social_media">
+                            <label for="checkSocial">Social Media</label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="convert-btn" id="checkerBtn">Bild prüfen</button>
+            </form>
+
+            <div class="checker-results" id="checkerResults"></div>
+            <div class="error-message" id="checkerErrorMessage"></div>
         </div>
     </div>
 
@@ -1216,6 +1387,129 @@
             pdfImagesErrorMessage.style.display = 'block';
             pdfImagesProgressContainer.style.display = 'none';
             pdfImagesConvertBtn.disabled = false;
+        }
+
+        // ===== Image Checker Tab =====
+        const checkerUploadArea = document.getElementById('checkerUploadArea');
+        const checkerFile = document.getElementById('checkerFile');
+        const checkerFileName = document.getElementById('checkerFileName');
+        const checkerOptions = document.getElementById('checkerOptions');
+        const checkerBtn = document.getElementById('checkerBtn');
+        const checkerForm = document.getElementById('imageCheckerForm');
+        const checkerResults = document.getElementById('checkerResults');
+        const checkerErrorMessage = document.getElementById('checkerErrorMessage');
+
+        checkerUploadArea.addEventListener('click', () => checkerFile.click());
+
+        checkerUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            checkerUploadArea.classList.add('dragover');
+        });
+
+        checkerUploadArea.addEventListener('dragleave', () => {
+            checkerUploadArea.classList.remove('dragover');
+        });
+
+        checkerUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            checkerUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                checkerFile.files = files;
+                displayCheckerFileName(files[0]);
+            }
+        });
+
+        checkerFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                displayCheckerFileName(e.target.files[0]);
+            }
+        });
+
+        function displayCheckerFileName(file) {
+            checkerFileName.innerHTML = `<div class="file-item">📎 ${file.name} (${formatFileSize(file.size)})</div>`;
+            checkerFileName.style.display = 'block';
+            checkerOptions.style.display = 'block';
+            checkerBtn.style.display = 'block';
+        }
+
+        const ratingMessages = {
+            good: {
+                icon: '✅',
+                text: 'Sehr gut geeignet',
+                description: 'Das Bild hat optimale Maße für diesen Verwendungszweck.'
+            },
+            minimum: {
+                icon: '⚠️',
+                text: 'Ausreichend',
+                description: 'Das Bild erfüllt die Mindestanforderungen, ist aber nicht optimal.'
+            },
+            unfit: {
+                icon: '❌',
+                text: 'Nicht geeignet',
+                description: 'Das Bild ist zu klein für diesen Verwendungszweck.'
+            }
+        };
+
+        checkerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const checkboxes = checkerForm.querySelectorAll('input[name="purposes"]:checked');
+            if (checkboxes.length === 0) {
+                checkerErrorMessage.textContent = 'Bitte wählen Sie mindestens einen Verwendungszweck aus.';
+                checkerErrorMessage.style.display = 'block';
+                return;
+            }
+
+            checkerBtn.disabled = true;
+            checkerErrorMessage.style.display = 'none';
+            checkerResults.classList.remove('visible');
+
+            const formData = new FormData(checkerForm);
+
+            try {
+                const response = await fetch('/check-image/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayCheckerResults(data);
+                checkerResults.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (error) {
+                checkerErrorMessage.textContent = '❌ ' + error.message;
+                checkerErrorMessage.style.display = 'block';
+            } finally {
+                checkerBtn.disabled = false;
+            }
+        });
+
+        function displayCheckerResults(data) {
+            let html = `<div class="checker-image-info">
+                <strong>Bildgröße: ${data.width} x ${data.height} Pixel</strong>
+            </div>`;
+
+            for (const [purpose, result] of Object.entries(data.results)) {
+                const msg = ratingMessages[result.rating];
+                html += `
+                    <div class="result-card ${result.rating}">
+                        <div class="result-icon">${msg.icon}</div>
+                        <div class="result-details">
+                            <div class="result-title">${result.label}: ${msg.text}</div>
+                            <div class="result-description">${msg.description}</div>
+                            <div class="result-thresholds">Optimal: ≥ ${result.good} · Mindestens: ≥ ${result.minimum}</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            checkerResults.innerHTML = html;
+            checkerResults.classList.add('visible');
         }
     </script>
 </body>

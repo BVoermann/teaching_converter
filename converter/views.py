@@ -3,6 +3,7 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
 from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type, pdf_to_images_zip
+from PIL import Image
 import os
 import uuid
 import threading
@@ -412,7 +413,7 @@ def download_compress_file(request, task_id):
 
                 return response
 
-    return HttpResponse('File not found', status=404)
+    return HttpResponse('Compressed file not found', status=404)
 
 
 def upload_pdf_images(request):
@@ -504,4 +505,74 @@ def download_pdf_images_file(request, task_id):
 
                 return response
 
-    return HttpResponse('File not found', status=404)
+    return HttpResponse('PDF images file not found', status=404)
+
+
+# Image size thresholds per purpose: (good_width, good_height, min_width, min_height)
+IMAGE_THRESHOLDS = {
+    'powerpoint': {
+        'good': (1920, 1080),
+        'minimum': (1280, 720),
+        'label': 'PowerPoint',
+    },
+    'h5p': {
+        'good': (1600, 800),
+        'minimum': (800, 400),
+        'label': 'H5P',
+    },
+    'website': {
+        'good': (1920, 1080),
+        'minimum': (1280, 720),
+        'label': 'Website',
+    },
+    'social_media': {
+        'good': (1200, 630),
+        'minimum': (600, 315),
+        'label': 'Social Media',
+    },
+}
+
+
+def check_image(request):
+    if request.method == 'POST' and request.FILES.get('image_file'):
+        image_file = request.FILES['image_file']
+        purposes = request.POST.getlist('purposes')
+
+        if not purposes:
+            return JsonResponse({'error': 'Keine Verwendungszwecke ausgewählt.'}, status=400)
+
+        try:
+            img = Image.open(image_file)
+            width, height = img.size
+        except Exception:
+            return JsonResponse({'error': 'Datei konnte nicht als Bild gelesen werden.'}, status=400)
+
+        results = {}
+        for purpose in purposes:
+            if purpose not in IMAGE_THRESHOLDS:
+                continue
+            t = IMAGE_THRESHOLDS[purpose]
+            good_w, good_h = t['good']
+            min_w, min_h = t['minimum']
+
+            if width >= good_w and height >= good_h:
+                rating = 'good'
+            elif width >= min_w and height >= min_h:
+                rating = 'minimum'
+            else:
+                rating = 'unfit'
+
+            results[purpose] = {
+                'label': t['label'],
+                'rating': rating,
+                'good': f'{good_w} x {good_h} px',
+                'minimum': f'{min_w} x {min_h} px',
+            }
+
+        return JsonResponse({
+            'width': width,
+            'height': height,
+            'results': results,
+        })
+
+    return render(request, 'converter/upload.html')
