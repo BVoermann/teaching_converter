@@ -614,15 +614,15 @@
         <!-- Compress Files Tab Content -->
         <div class="tab-content" id="compress-files">
             <h1>Dateien komprimieren</h1>
-            <p class="subtitle">Verkleinern Sie Ihre Bilder, Videos und Audiodateien</p>
+            <p class="subtitle">Verkleinern Sie Ihre Bilder, Videos, Audio- und PDF-Dateien</p>
 
             <form id="compressUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="compressUploadArea">
                     <div class="upload-icon">📦</div>
                     <div class="upload-text">Klicken zum Hochladen oder Dateien hierher ziehen</div>
-                    <div class="upload-hint">Bilder, Videos und Audiodateien</div>
-                    <input type="file" name="compress_files" id="compressFiles" accept="image/*,video/*,audio/*" multiple>
+                    <div class="upload-hint">Bilder, Videos, Audio- und PDF-Dateien</div>
+                    <input type="file" name="compress_files" id="compressFiles" accept="image/*,video/*,audio/*,.pdf,application/pdf" multiple>
                 </div>
                 <div class="file-list" id="compressFileList"></div>
                 <button type="submit" class="convert-btn" id="compressBtn">Dateien komprimieren</button>
@@ -1069,7 +1069,9 @@
         const supportedTypes = ['image/', 'video/', 'audio/'];
 
         function isSupportedFile(file) {
-            return supportedTypes.some(type => file.type.startsWith(type));
+            return supportedTypes.some(type => file.type.startsWith(type)) ||
+                   file.type === 'application/pdf' ||
+                   file.name.toLowerCase().endsWith('.pdf');
         }
 
         compressUploadArea.addEventListener('click', () => compressFiles.click());
@@ -1108,6 +1110,7 @@
             if (file.type.startsWith('image/')) return '🖼️';
             if (file.type.startsWith('video/')) return '🎬';
             if (file.type.startsWith('audio/')) return '🎵';
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return '📄';
             return '📄';
         }
 

@@ -332,7 +332,7 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': 'Keine unterstützten Dateien gefunden. Bitte laden Sie Bilder, Videos oder Audiodateien hoch.'
+                'message': 'Keine unterstützten Dateien gefunden. Bitte laden Sie Bilder, Videos, Audio- oder PDF-Dateien hoch.'
             }
             return JsonResponse({'task_id': task_id, 'error': 'Keine unterstützten Dateien'}, status=400)
 
