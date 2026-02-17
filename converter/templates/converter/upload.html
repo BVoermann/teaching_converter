@@ -737,6 +737,12 @@
             pdfUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type === 'application/pdf') {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    pdfErrorMessage.textContent = sizeError;
+                    pdfErrorMessage.style.display = 'block';
+                    return;
+                }
                 pdfFile.files = files;
                 displayPdfFileName(files[0]);
             }
@@ -744,6 +750,14 @@
 
         pdfFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    pdfErrorMessage.textContent = sizeError;
+                    pdfErrorMessage.style.display = 'block';
+                    pdfFile.value = '';
+                    return;
+                }
+                pdfErrorMessage.style.display = 'none';
                 displayPdfFileName(e.target.files[0]);
             }
         });
@@ -757,7 +771,36 @@
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        }
+
+        // File size limits in bytes
+        const FILE_SIZE_LIMITS = {
+            image: { max: 50 * 1024 * 1024, label: '50 MB' },
+            pdf: { max: 100 * 1024 * 1024, label: '100 MB' },
+            audio: { max: 500 * 1024 * 1024, label: '500 MB' },
+            video: { max: 2 * 1024 * 1024 * 1024, label: '2 GB' },
+            pptx: { max: 100 * 1024 * 1024, label: '100 MB' },
+        };
+
+        function getFileSizeCategory(file) {
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf';
+            if (file.name.toLowerCase().endsWith('.pptx') || file.type.includes('presentationml')) return 'pptx';
+            if (file.type.startsWith('image/')) return 'image';
+            if (file.type.startsWith('video/')) return 'video';
+            if (file.type.startsWith('audio/')) return 'audio';
+            return null;
+        }
+
+        function checkFileSize(file) {
+            const category = getFileSizeCategory(file);
+            if (!category || !FILE_SIZE_LIMITS[category]) return null;
+            const limit = FILE_SIZE_LIMITS[category];
+            if (file.size > limit.max) {
+                return `"${file.name}" ist zu groß (${formatFileSize(file.size)}). Maximale Größe für diesen Dateityp: ${limit.label}.`;
+            }
+            return null;
         }
 
         pdfUploadForm.addEventListener('submit', (e) => {
@@ -903,7 +946,24 @@
         });
 
         function handleFiles(files) {
-            selectedImages = files;
+            const errors = [];
+            const validFiles = [];
+            for (const file of files) {
+                const sizeError = checkFileSize(file);
+                if (sizeError) {
+                    errors.push(sizeError);
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (errors.length > 0) {
+                h5pErrorMessage.textContent = errors.join(' ');
+                h5pErrorMessage.style.display = 'block';
+            } else {
+                h5pErrorMessage.style.display = 'none';
+            }
+            if (validFiles.length === 0) return;
+            selectedImages = validFiles;
             displayImageList();
             h5pOptions.style.display = 'block';
             h5pConvertBtn.style.display = 'block';
@@ -1101,7 +1161,24 @@
         });
 
         function handleCompressFiles(files) {
-            selectedCompressFiles = files;
+            const errors = [];
+            const validFiles = [];
+            for (const file of files) {
+                const sizeError = checkFileSize(file);
+                if (sizeError) {
+                    errors.push(sizeError);
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (errors.length > 0) {
+                compressErrorMessage.textContent = errors.join(' ');
+                compressErrorMessage.style.display = 'block';
+            } else {
+                compressErrorMessage.style.display = 'none';
+            }
+            if (validFiles.length === 0) return;
+            selectedCompressFiles = validFiles;
             displayCompressFileList();
             compressBtn.style.display = 'block';
         }
@@ -1277,6 +1354,12 @@
             pdfImagesUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type === 'application/pdf') {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    pdfImagesErrorMessage.textContent = sizeError;
+                    pdfImagesErrorMessage.style.display = 'block';
+                    return;
+                }
                 pdfImagesFile.files = files;
                 displayPdfImagesFileName(files[0]);
             }
@@ -1284,6 +1367,14 @@
 
         pdfImagesFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    pdfImagesErrorMessage.textContent = sizeError;
+                    pdfImagesErrorMessage.style.display = 'block';
+                    pdfImagesFile.value = '';
+                    return;
+                }
+                pdfImagesErrorMessage.style.display = 'none';
                 displayPdfImagesFileName(e.target.files[0]);
             }
         });
@@ -1413,6 +1504,12 @@
             checkerUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type.startsWith('image/')) {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    checkerErrorMessage.textContent = sizeError;
+                    checkerErrorMessage.style.display = 'block';
+                    return;
+                }
                 checkerFile.files = files;
                 displayCheckerFileName(files[0]);
             }
@@ -1420,6 +1517,14 @@
 
         checkerFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    checkerErrorMessage.textContent = sizeError;
+                    checkerErrorMessage.style.display = 'block';
+                    checkerFile.value = '';
+                    return;
+                }
+                checkerErrorMessage.style.display = 'none';
                 displayCheckerFileName(e.target.files[0]);
             }
         });

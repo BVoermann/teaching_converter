@@ -17,6 +17,52 @@ compress_conversion_progress = {}
 pdf_images_progress = {}
 
 
+# File size limits in bytes
+FILE_SIZE_LIMITS = {
+    'image': 50 * 1024 * 1024,       # 50 MB
+    'pdf': 100 * 1024 * 1024,         # 100 MB
+    'audio': 500 * 1024 * 1024,       # 500 MB
+    'video': 2 * 1024 * 1024 * 1024,  # 2 GB
+    'pptx': 100 * 1024 * 1024,        # 100 MB
+}
+
+FILE_SIZE_LABELS = {
+    'image': '50 MB',
+    'pdf': '100 MB',
+    'audio': '500 MB',
+    'video': '2 GB',
+    'pptx': '100 MB',
+}
+
+
+def _get_upload_file_type(file):
+    """Determine file type category for size limit checking."""
+    name = file.name.lower()
+    if name.endswith('.pptx'):
+        return 'pptx'
+    if name.endswith('.pdf') or file.content_type == 'application/pdf':
+        return 'pdf'
+    ct = file.content_type or ''
+    if ct.startswith('image/'):
+        return 'image'
+    if ct.startswith('video/'):
+        return 'video'
+    if ct.startswith('audio/'):
+        return 'audio'
+    return None
+
+
+def _check_file_size(file):
+    """Return an error message string if file exceeds its size limit, else None."""
+    file_type = _get_upload_file_type(file)
+    if not file_type or file_type not in FILE_SIZE_LIMITS:
+        return None
+    limit = FILE_SIZE_LIMITS[file_type]
+    if file.size > limit:
+        return f'"{file.name}" ist zu groß ({file.size // (1024*1024)} MB). Maximale Größe: {FILE_SIZE_LABELS[file_type]}.'
+    return None
+
+
 def _track_task_in_session(request, task_id):
     """Store task ID in the user's session for cleanup on disconnect."""
     if 'task_ids' not in request.session:
@@ -28,6 +74,10 @@ def _track_task_in_session(request, task_id):
 def upload_pdf(request):
     if request.method == 'POST' and request.FILES.get('pdf_file'):
         pdf_file = request.FILES['pdf_file']
+
+        size_error = _check_file_size(pdf_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
@@ -134,6 +184,11 @@ def upload_images_to_h5p(request):
         image_files = request.FILES.getlist('image_files')
         content_type = request.POST.get('content_type', 'presentation')
         alignment = request.POST.get('alignment', 'middle')
+
+        for f in image_files:
+            size_error = _check_file_size(f)
+            if size_error:
+                return JsonResponse({'error': size_error}, status=400)
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
@@ -314,6 +369,11 @@ def upload_compress(request):
     if request.method == 'POST' and request.FILES.getlist('compress_files'):
         uploaded_files = request.FILES.getlist('compress_files')
 
+        for f in uploaded_files:
+            size_error = _check_file_size(f)
+            if size_error:
+                return JsonResponse({'error': size_error}, status=400)
+
         # Generate unique task ID
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
@@ -429,6 +489,10 @@ def download_compress_file(request, task_id):
 def upload_pdf_images(request):
     if request.method == 'POST' and request.FILES.get('pdf_file_images'):
         pdf_file = request.FILES['pdf_file_images']
+
+        size_error = _check_file_size(pdf_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
 
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
@@ -625,6 +689,11 @@ IMAGE_THRESHOLDS = {
 def check_image(request):
     if request.method == 'POST' and request.FILES.get('image_file'):
         image_file = request.FILES['image_file']
+
+        size_error = _check_file_size(image_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
+
         purposes = request.POST.getlist('purposes')
 
         if not purposes:
