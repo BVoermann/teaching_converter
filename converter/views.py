@@ -17,12 +17,21 @@ compress_conversion_progress = {}
 pdf_images_progress = {}
 
 
+def _track_task_in_session(request, task_id):
+    """Store task ID in the user's session for cleanup on disconnect."""
+    if 'task_ids' not in request.session:
+        request.session['task_ids'] = []
+    request.session['task_ids'].append(task_id)
+    request.session.modified = True
+
+
 def upload_pdf(request):
     if request.method == 'POST' and request.FILES.get('pdf_file'):
         pdf_file = request.FILES['pdf_file']
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
+        _track_task_in_session(request, task_id)
         conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
 
         # Save uploaded PDF
@@ -128,6 +137,7 @@ def upload_images_to_h5p(request):
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
+        _track_task_in_session(request, task_id)
         h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
 
         # Separate PPTX files from image files
@@ -307,6 +317,7 @@ def upload_compress(request):
 
         # Generate unique task ID
         task_id = str(uuid.uuid4())
+        _track_task_in_session(request, task_id)
         compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
 
         # Save uploaded files and filter to supported types
@@ -421,6 +432,7 @@ def upload_pdf_images(request):
         pdf_file = request.FILES['pdf_file_images']
 
         task_id = str(uuid.uuid4())
+        _track_task_in_session(request, task_id)
         pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
 
         fs = FileSystemStorage()
@@ -506,6 +518,84 @@ def download_pdf_images_file(request, task_id):
                 return response
 
     return HttpResponse('PDF images file not found', status=404)
+
+
+def _cleanup_task(task_id):
+    """Delete all files associated with a task ID from any converter."""
+    # PDF to PPTX
+    if task_id in conversion_progress:
+        data = conversion_progress[task_id]
+        for key in ('output_path', 'pdf_path'):
+            path = data.get(key)
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        del conversion_progress[task_id]
+
+    # H5P
+    if task_id in h5p_conversion_progress:
+        data = h5p_conversion_progress[task_id]
+        path = data.get('output_path')
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        for img_path in data.get('image_paths', []):
+            if os.path.exists(img_path):
+                try:
+                    os.remove(img_path)
+                except OSError:
+                    pass
+        for temp_dir in data.get('temp_dirs', []):
+            if os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    pass
+        del h5p_conversion_progress[task_id]
+
+    # Compress
+    if task_id in compress_conversion_progress:
+        data = compress_conversion_progress[task_id]
+        path = data.get('output_path')
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        for file_path in data.get('file_paths', []):
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+        del compress_conversion_progress[task_id]
+
+    # PDF to Images
+    if task_id in pdf_images_progress:
+        data = pdf_images_progress[task_id]
+        for key in ('output_path', 'pdf_path'):
+            path = data.get(key)
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        del pdf_images_progress[task_id]
+
+
+@csrf_exempt
+def cleanup_session(request):
+    """Clean up all files for the current session when user disconnects."""
+    task_ids = request.session.get('task_ids', [])
+    for task_id in task_ids:
+        _cleanup_task(task_id)
+    request.session['task_ids'] = []
+    request.session.modified = True
+    return JsonResponse({'status': 'ok'})
 
 
 # Image size thresholds per purpose: (good_width, good_height, min_width, min_height)

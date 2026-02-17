@@ -1511,6 +1511,10 @@
             checkerResults.innerHTML = html;
             checkerResults.classList.add('visible');
         }
+        // Clean up all uploaded/converted files when user leaves the page
+        window.addEventListener('beforeunload', () => {
+            navigator.sendBeacon('/cleanup-session/');
+        });
     </script>
 </body>
 </html>
