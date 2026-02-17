@@ -32,7 +32,7 @@ def upload_pdf(request):
         # Generate unique task ID
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
-        conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
+        conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Datei wird hochgeladen...'}
 
         # Save uploaded PDF
         fs = FileSystemStorage()
@@ -76,7 +76,7 @@ def upload_pdf(request):
             conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -87,7 +87,7 @@ def check_progress(request, task_id):
     """Endpoint to check conversion progress"""
     if task_id in conversion_progress:
         return JsonResponse(conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_file(request, task_id):
@@ -126,7 +126,7 @@ def download_file(request, task_id):
 
                 return response
 
-    return HttpResponse('PPTX file not found', status=404)
+    return HttpResponse('PPTX-Datei nicht gefunden', status=404)
 
 
 def upload_images_to_h5p(request):
@@ -245,7 +245,7 @@ def upload_images_to_h5p(request):
             h5p_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -256,7 +256,7 @@ def check_h5p_progress(request, task_id):
     """Endpoint to check H5P conversion progress"""
     if task_id in h5p_conversion_progress:
         return JsonResponse(h5p_conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_h5p_file(request, task_id):
@@ -307,7 +307,7 @@ def download_h5p_file(request, task_id):
 
                 return response
 
-    return HttpResponse('H5P file not found', status=404)
+    return HttpResponse('H5P-Datei nicht gefunden', status=404)
 
 
 def upload_compress(request):
@@ -317,7 +317,7 @@ def upload_compress(request):
         # Generate unique task ID
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
-        compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+        compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Dateien werden hochgeladen...'}
 
         # Save uploaded files and filter to supported types
         fs = FileSystemStorage()
@@ -332,9 +332,9 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': 'No supported files found. Please upload images, videos, or audio files.'
+                'message': 'Keine unterstützten Dateien gefunden. Bitte laden Sie Bilder, Videos oder Audiodateien hoch.'
             }
-            return JsonResponse({'task_id': task_id, 'error': 'No supported files'}, status=400)
+            return JsonResponse({'task_id': task_id, 'error': 'Keine unterstützten Dateien'}, status=400)
 
         # Create output filename
         output_filename = f'compressed_{task_id}.zip'
@@ -375,7 +375,7 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -385,7 +385,7 @@ def upload_compress(request):
 def check_compress_progress(request, task_id):
     if task_id in compress_conversion_progress:
         return JsonResponse(compress_conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_compress_file(request, task_id):
@@ -423,7 +423,7 @@ def download_compress_file(request, task_id):
 
                 return response
 
-    return HttpResponse('Compressed file not found', status=404)
+    return HttpResponse('Komprimierte Datei nicht gefunden', status=404)
 
 
 def upload_pdf_images(request):
@@ -432,7 +432,7 @@ def upload_pdf_images(request):
 
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
-        pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
+        pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Datei wird hochgeladen...'}
 
         fs = FileSystemStorage()
         pdf_filename = fs.save(pdf_file.name, pdf_file)
@@ -471,7 +471,7 @@ def upload_pdf_images(request):
             pdf_images_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -481,7 +481,7 @@ def upload_pdf_images(request):
 def check_pdf_images_progress(request, task_id):
     if task_id in pdf_images_progress:
         return JsonResponse(pdf_images_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_pdf_images_file(request, task_id):
@@ -516,7 +516,7 @@ def download_pdf_images_file(request, task_id):
 
                 return response
 
-    return HttpResponse('PDF images file not found', status=404)
+    return HttpResponse('PDF-Bilder-Datei nicht gefunden', status=404)
 
 
 def _cleanup_task(task_id):

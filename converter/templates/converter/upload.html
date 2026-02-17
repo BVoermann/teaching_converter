@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Converter</title>
+    <title>Dateikonverter</title>
     <style>
         * {
             margin: 0;
@@ -473,16 +473,16 @@
     <div class="container">
         <div class="tabs">
             <div class="tab active" data-tab="pdf-to-pptx">
-                <span>📄 PDF to PowerPoint</span>
+                <span>📄 PDF zu PowerPoint</span>
             </div>
             <div class="tab" data-tab="images-to-h5p">
-                <span>🖼️ Images or Presentations to H5P</span>
+                <span>🖼️ Bilder oder Präsentationen zu H5P</span>
             </div>
             <div class="tab" data-tab="compress-files">
-                <span>📦 Compress Files</span>
+                <span>📦 Dateien komprimieren</span>
             </div>
             <div class="tab" data-tab="pdf-to-images">
-                <span>🖼️ PDF to Images</span>
+                <span>🖼️ PDF zu Bildern</span>
             </div>
             <div class="tab" data-tab="image-checker">
                 <span>🔍 Bildprüfer</span>
@@ -491,24 +491,24 @@
 
         <!-- PDF to PPTX Tab Content -->
         <div class="tab-content active" id="pdf-to-pptx">
-            <h1>PDF to PowerPoint</h1>
-            <p class="subtitle">Convert your PDF documents to PowerPoint presentations</p>
+            <h1>PDF zu PowerPoint</h1>
+            <p class="subtitle">Konvertieren Sie Ihre PDF-Dokumente in PowerPoint-Präsentationen</p>
 
             <form id="pdfUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="pdfUploadArea">
                     <div class="upload-icon">📄</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">PDF files only</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Datei hierher ziehen</div>
+                    <div class="upload-hint">Nur PDF-Dateien</div>
                     <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
                 </div>
                 <div class="file-list" id="pdfFileName"></div>
-                <button type="submit" class="convert-btn" id="pdfConvertBtn">Convert to PowerPoint</button>
+                <button type="submit" class="convert-btn" id="pdfConvertBtn">Zu PowerPoint konvertieren</button>
             </form>
 
             <div class="progress-container" id="pdfProgressContainer">
                 <div class="progress-label">
-                    <span id="pdfProgressLabel">Processing...</span>
+                    <span id="pdfProgressLabel">Verarbeitung...</span>
                     <span id="pdfProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -518,53 +518,53 @@
             </div>
 
             <div class="success-icon" id="pdfSuccessIcon">✓</div>
-            <button class="download-btn" id="pdfDownloadBtn">Download PowerPoint</button>
+            <button class="download-btn" id="pdfDownloadBtn">PowerPoint herunterladen</button>
             <div class="error-message" id="pdfErrorMessage"></div>
         </div>
 
         <!-- Images to H5P Tab Content -->
         <div class="tab-content" id="images-to-h5p">
-            <h1>Images or Presentations to H5P</h1>
-            <p class="subtitle">Convert your images or PPTX presentations to H5P interactive content</p>
+            <h1>Bilder oder Präsentationen zu H5P</h1>
+            <p class="subtitle">Konvertieren Sie Ihre Bilder oder PPTX-Präsentationen in interaktive H5P-Inhalte</p>
 
             <form id="h5pUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="h5pUploadArea">
                     <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">Multiple image and PPTX files</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Dateien hierher ziehen</div>
+                    <div class="upload-hint">Mehrere Bild- und PPTX-Dateien</div>
                     <input type="file" name="image_files" id="imageFiles" accept="image/*,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple>
                 </div>
                 <div class="file-list" id="h5pFileList"></div>
 
                 <div class="options-group" id="h5pOptions">
-                    <label class="option-label">Image Alignment</label>
+                    <label class="option-label">Bildausrichtung</label>
                     <div class="radio-group">
                         <div class="radio-option">
                             <input type="radio" id="alignLeft" name="alignment" value="left">
-                            <label for="alignLeft">Left</label>
+                            <label for="alignLeft">Links</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignMiddle" name="alignment" value="middle" checked>
-                            <label for="alignMiddle">Middle</label>
+                            <label for="alignMiddle">Mitte</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignRight" name="alignment" value="right">
-                            <label for="alignRight">Right</label>
+                            <label for="alignRight">Rechts</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignFullscreen" name="alignment" value="fullscreen">
-                            <label for="alignFullscreen">Fullscreen</label>
+                            <label for="alignFullscreen">Vollbild</label>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="convert-btn" id="h5pConvertBtn">Convert to H5P</button>
+                <button type="submit" class="convert-btn" id="h5pConvertBtn">Zu H5P konvertieren</button>
             </form>
 
             <div class="progress-container" id="h5pProgressContainer">
                 <div class="progress-label">
-                    <span id="h5pProgressLabel">Processing...</span>
+                    <span id="h5pProgressLabel">Verarbeitung...</span>
                     <span id="h5pProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -574,30 +574,30 @@
             </div>
 
             <div class="success-icon" id="h5pSuccessIcon">✓</div>
-            <button class="download-btn" id="h5pDownloadBtn">Download H5P</button>
+            <button class="download-btn" id="h5pDownloadBtn">H5P herunterladen</button>
             <div class="error-message" id="h5pErrorMessage"></div>
         </div>
 
         <!-- PDF to Images Tab Content -->
         <div class="tab-content" id="pdf-to-images">
-            <h1>PDF to Images</h1>
-            <p class="subtitle">Convert each page of your PDF to a PNG image</p>
+            <h1>PDF zu Bildern</h1>
+            <p class="subtitle">Konvertieren Sie jede Seite Ihrer PDF in ein PNG-Bild</p>
 
             <form id="pdfImagesUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="pdfImagesUploadArea">
                     <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">PDF files only</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Datei hierher ziehen</div>
+                    <div class="upload-hint">Nur PDF-Dateien</div>
                     <input type="file" name="pdf_file_images" id="pdfImagesFile" accept=".pdf" required>
                 </div>
                 <div class="file-list" id="pdfImagesFileName"></div>
-                <button type="submit" class="convert-btn" id="pdfImagesConvertBtn">Convert to Images</button>
+                <button type="submit" class="convert-btn" id="pdfImagesConvertBtn">Zu Bildern konvertieren</button>
             </form>
 
             <div class="progress-container" id="pdfImagesProgressContainer">
                 <div class="progress-label">
-                    <span id="pdfImagesProgressLabel">Processing...</span>
+                    <span id="pdfImagesProgressLabel">Verarbeitung...</span>
                     <span id="pdfImagesProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -607,30 +607,30 @@
             </div>
 
             <div class="success-icon" id="pdfImagesSuccessIcon">✓</div>
-            <button class="download-btn" id="pdfImagesDownloadBtn">Download Images (ZIP)</button>
+            <button class="download-btn" id="pdfImagesDownloadBtn">Bilder herunterladen (ZIP)</button>
             <div class="error-message" id="pdfImagesErrorMessage"></div>
         </div>
 
         <!-- Compress Files Tab Content -->
         <div class="tab-content" id="compress-files">
-            <h1>Compress Files</h1>
-            <p class="subtitle">Shrink your images, videos, and audio files</p>
+            <h1>Dateien komprimieren</h1>
+            <p class="subtitle">Verkleinern Sie Ihre Bilder, Videos und Audiodateien</p>
 
             <form id="compressUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="compressUploadArea">
                     <div class="upload-icon">📦</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">Images, videos, and audio files</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Dateien hierher ziehen</div>
+                    <div class="upload-hint">Bilder, Videos und Audiodateien</div>
                     <input type="file" name="compress_files" id="compressFiles" accept="image/*,video/*,audio/*" multiple>
                 </div>
                 <div class="file-list" id="compressFileList"></div>
-                <button type="submit" class="convert-btn" id="compressBtn">Compress Files</button>
+                <button type="submit" class="convert-btn" id="compressBtn">Dateien komprimieren</button>
             </form>
 
             <div class="progress-container" id="compressProgressContainer">
                 <div class="progress-label">
-                    <span id="compressProgressLabel">Processing...</span>
+                    <span id="compressProgressLabel">Verarbeitung...</span>
                     <span id="compressProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -640,7 +640,7 @@
             </div>
 
             <div class="success-icon" id="compressSuccessIcon">✓</div>
-            <button class="download-btn" id="compressDownloadBtn">Download Compressed Files</button>
+            <button class="download-btn" id="compressDownloadBtn">Komprimierte Dateien herunterladen</button>
             <div class="error-message" id="compressErrorMessage"></div>
         </div>
 
@@ -947,7 +947,7 @@
 
             // Validate that files are selected
             if (!selectedImages || selectedImages.length === 0) {
-                h5pErrorMessage.textContent = 'Please select at least one file to convert.';
+                h5pErrorMessage.textContent = 'Bitte wählen Sie mindestens eine Datei zum Konvertieren aus.';
                 h5pErrorMessage.style.display = 'block';
                 return;
             }
@@ -1143,7 +1143,7 @@
             e.preventDefault();
 
             if (!selectedCompressFiles || selectedCompressFiles.length === 0) {
-                compressErrorMessage.textContent = 'Please select at least one file to compress.';
+                compressErrorMessage.textContent = 'Bitte wählen Sie mindestens eine Datei zum Komprimieren aus.';
                 compressErrorMessage.style.display = 'block';
                 return;
             }
