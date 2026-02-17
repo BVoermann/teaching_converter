@@ -43,16 +43,16 @@ def upload_pdf(request):
         output_filename = pdf_filename.replace('.pdf', '.pptx')
         output_path = fs.path(output_filename)
 
-        conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+        conversion_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Konvertierung wird gestartet...'}
 
         try:
             # Convert PDF to PPTX with progress callback
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Converting page {current} of {total}...'
+                    'message': f'Seite {current} von {total} wird konvertiert...'
                 }
 
             pdf_to_pptx(pdf_path, output_path, progress_callback)
@@ -60,7 +60,7 @@ def upload_pdf(request):
             conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'pdf_path': pdf_path
@@ -138,7 +138,7 @@ def upload_images_to_h5p(request):
         # Generate unique task ID
         task_id = str(uuid.uuid4())
         _track_task_in_session(request, task_id)
-        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Dateien werden hochgeladen...'}
 
         # Separate PPTX files from image files
         pptx_files = []
@@ -165,8 +165,8 @@ def upload_images_to_h5p(request):
             for idx, pptx_file in enumerate(pptx_files):
                 h5p_conversion_progress[task_id] = {
                     'status': 'converting',
-                    'progress': 10 + int((idx / total_pptx) * 30),
-                    'message': f'Converting PPTX {idx + 1} of {total_pptx}...'
+                    'progress': int((idx / total_pptx) * 40),
+                    'message': f'PPTX {idx + 1} von {total_pptx} wird konvertiert...'
                 }
 
                 # Save PPTX temporarily
@@ -199,17 +199,16 @@ def upload_images_to_h5p(request):
         output_filename = f'h5p_content_{task_id}.h5p'
         output_path = fs.path(output_filename)
 
-        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 40, 'message': 'Creating H5P package...'}
+        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 40, 'message': 'H5P-Paket wird erstellt...'}
 
         try:
             # Convert images to H5P with progress callback
-            def progress_callback(current, total, message='Processing'):
-                # Adjust progress: 40-90% for H5P conversion
-                progress = 40 + int((current / total) * 50)
+            def progress_callback(current, total, message='Verarbeitung'):
+                progress = 40 + int((current / total) * 60)
                 h5p_conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'{message} {current} of {total}...'
+                    'message': f'{message} {current} von {total}...'
                 }
 
             images_to_h5p(image_paths, output_path, content_type, alignment, progress_callback)
@@ -217,7 +216,7 @@ def upload_images_to_h5p(request):
             h5p_conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'image_paths': image_paths,
@@ -341,15 +340,15 @@ def upload_compress(request):
         output_filename = f'compressed_{task_id}.zip'
         output_path = fs.path(output_filename)
 
-        compress_conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting compression...'}
+        compress_conversion_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Komprimierung wird gestartet...'}
 
         try:
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 compress_conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Compressing file {current} of {total}...'
+                    'message': f'Datei {current} von {total} wird komprimiert...'
                 }
 
             compress_files(file_paths, output_path, progress_callback)
@@ -357,7 +356,7 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Compression complete!',
+                'message': 'Komprimierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'file_paths': file_paths
@@ -442,15 +441,15 @@ def upload_pdf_images(request):
         output_filename = f'pdf_images_{task_id}.zip'
         output_path = fs.path(output_filename)
 
-        pdf_images_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+        pdf_images_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Konvertierung wird gestartet...'}
 
         try:
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 pdf_images_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Converting page {current} of {total}...'
+                    'message': f'Seite {current} von {total} wird konvertiert...'
                 }
 
             pdf_to_images_zip(pdf_path, output_path, progress_callback)
@@ -458,7 +457,7 @@ def upload_pdf_images(request):
             pdf_images_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'pdf_path': pdf_path

@@ -760,7 +760,7 @@
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
-        pdfUploadForm.addEventListener('submit', async (e) => {
+        pdfUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             pdfConvertBtn.disabled = true;
@@ -771,44 +771,43 @@
             pdfProgressContainer.style.display = 'block';
             pdfProgressBar.style.width = '0%';
             pdfProgressPercent.textContent = '0%';
-            pdfProgressLabel.textContent = 'Uploading...';
+            pdfProgressLabel.textContent = 'Hochladen...';
             pdfStatusMessage.textContent = '';
 
             const formData = new FormData(pdfUploadForm);
+            const xhr = new XMLHttpRequest();
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updatePdfProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updatePdfProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showPdfError(data.error);
+                        pdfConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updatePdfProgress(100, 'Uploaded', 'File uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    // Reset progress bar for conversion phase
+                    updatePdfProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollPdfProgress(data.task_id);
+                } else {
+                    showPdfError('Upload fehlgeschlagen');
+                    pdfConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollPdfProgress(data.task_id);
-
-            } catch (error) {
-                showPdfError(error.message);
+            xhr.addEventListener('error', () => {
+                showPdfError('Upload fehlgeschlagen');
                 pdfConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '');
+            xhr.send(formData);
         });
 
         async function pollPdfProgress(taskId) {
@@ -817,7 +816,7 @@
                     const response = await fetch(`/progress/${taskId}/`);
                     const data = await response.json();
 
-                    updatePdfProgress(data.progress, data.message, data.message);
+                    updatePdfProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -828,7 +827,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showPdfError('Failed to check conversion status');
+                    showPdfError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -943,7 +942,7 @@
             });
         }
 
-        h5pUploadForm.addEventListener('submit', async (e) => {
+        h5pUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             // Validate that files are selected
@@ -961,7 +960,7 @@
             h5pProgressContainer.style.display = 'block';
             h5pProgressBar.style.width = '0%';
             h5pProgressPercent.textContent = '0%';
-            h5pProgressLabel.textContent = 'Uploading...';
+            h5pProgressLabel.textContent = 'Hochladen...';
             h5pStatusMessage.textContent = '';
 
             const formData = new FormData();
@@ -972,39 +971,38 @@
             formData.append('alignment', document.querySelector('input[name="alignment"]:checked').value);
             formData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updateH5pProgress(uploadProgress, 'Uploading...', 'Preparing your images...');
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateH5pProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showH5pError(data.error);
+                        h5pConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/images-to-h5p/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updateH5pProgress(100, 'Uploaded', 'Images uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updateH5pProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollH5pProgress(data.task_id);
+                } else {
+                    showH5pError('Upload fehlgeschlagen');
+                    h5pConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollH5pProgress(data.task_id);
-
-            } catch (error) {
-                showH5pError(error.message);
+            xhr.addEventListener('error', () => {
+                showH5pError('Upload fehlgeschlagen');
                 h5pConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/images-to-h5p/');
+            xhr.send(formData);
         });
 
         async function pollH5pProgress(taskId) {
@@ -1013,7 +1011,7 @@
                     const response = await fetch(`/h5p-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updateH5pProgress(data.progress, data.message, data.message);
+                    updateH5pProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1024,7 +1022,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showH5pError('Failed to check conversion status');
+                    showH5pError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -1141,7 +1139,7 @@
             });
         }
 
-        compressUploadForm.addEventListener('submit', async (e) => {
+        compressUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             if (!selectedCompressFiles || selectedCompressFiles.length === 0) {
@@ -1158,7 +1156,7 @@
             compressProgressContainer.style.display = 'block';
             compressProgressBar.style.width = '0%';
             compressProgressPercent.textContent = '0%';
-            compressProgressLabel.textContent = 'Uploading...';
+            compressProgressLabel.textContent = 'Hochladen...';
             compressStatusMessage.textContent = '';
 
             const formData = new FormData();
@@ -1167,39 +1165,38 @@
             });
             formData.append('csrfmiddlewaretoken', document.querySelector('#compressUploadForm input[name="csrfmiddlewaretoken"]').value);
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updateCompressProgress(uploadProgress, 'Uploading...', 'Preparing your files...');
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateCompressProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showCompressError(data.error);
+                        compressBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/compress-files/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updateCompressProgress(100, 'Uploaded', 'Files uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updateCompressProgress(0, 'Komprimierung...', 'Komprimierung wird gestartet...');
+                    pollCompressProgress(data.task_id);
+                } else {
+                    showCompressError('Upload fehlgeschlagen');
+                    compressBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollCompressProgress(data.task_id);
-
-            } catch (error) {
-                showCompressError(error.message);
+            xhr.addEventListener('error', () => {
+                showCompressError('Upload fehlgeschlagen');
                 compressBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/compress-files/');
+            xhr.send(formData);
         });
 
         async function pollCompressProgress(taskId) {
@@ -1208,7 +1205,7 @@
                     const response = await fetch(`/compress-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updateCompressProgress(data.progress, data.message, data.message);
+                    updateCompressProgress(data.progress, 'Komprimierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1219,7 +1216,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showCompressError('Failed to check compression status');
+                    showCompressError('Komprimierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -1294,7 +1291,7 @@
             pdfImagesConvertBtn.style.display = 'block';
         }
 
-        pdfImagesUploadForm.addEventListener('submit', async (e) => {
+        pdfImagesUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             pdfImagesConvertBtn.disabled = true;
@@ -1305,44 +1302,42 @@
             pdfImagesProgressContainer.style.display = 'block';
             pdfImagesProgressBar.style.width = '0%';
             pdfImagesProgressPercent.textContent = '0%';
-            pdfImagesProgressLabel.textContent = 'Uploading...';
+            pdfImagesProgressLabel.textContent = 'Hochladen...';
             pdfImagesStatusMessage.textContent = '';
 
             const formData = new FormData(pdfImagesUploadForm);
+            const xhr = new XMLHttpRequest();
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updatePdfImagesProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updatePdfImagesProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showPdfImagesError(data.error);
+                        pdfImagesConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/pdf-to-images/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updatePdfImagesProgress(100, 'Uploaded', 'File uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updatePdfImagesProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollPdfImagesProgress(data.task_id);
+                } else {
+                    showPdfImagesError('Upload fehlgeschlagen');
+                    pdfImagesConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollPdfImagesProgress(data.task_id);
-
-            } catch (error) {
-                showPdfImagesError(error.message);
+            xhr.addEventListener('error', () => {
+                showPdfImagesError('Upload fehlgeschlagen');
                 pdfImagesConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/pdf-to-images/');
+            xhr.send(formData);
         });
 
         async function pollPdfImagesProgress(taskId) {
@@ -1351,7 +1346,7 @@
                     const response = await fetch(`/pdf-images-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updatePdfImagesProgress(data.progress, data.message, data.message);
+                    updatePdfImagesProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1362,7 +1357,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showPdfImagesError('Failed to check conversion status');
+                    showPdfImagesError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
