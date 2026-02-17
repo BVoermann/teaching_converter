@@ -17,13 +17,72 @@ compress_conversion_progress = {}
 pdf_images_progress = {}
 
 
+# File size limits in bytes
+FILE_SIZE_LIMITS = {
+    'image': 50 * 1024 * 1024,       # 50 MB
+    'pdf': 100 * 1024 * 1024,         # 100 MB
+    'audio': 500 * 1024 * 1024,       # 500 MB
+    'video': 2 * 1024 * 1024 * 1024,  # 2 GB
+    'pptx': 100 * 1024 * 1024,        # 100 MB
+}
+
+FILE_SIZE_LABELS = {
+    'image': '50 MB',
+    'pdf': '100 MB',
+    'audio': '500 MB',
+    'video': '2 GB',
+    'pptx': '100 MB',
+}
+
+
+def _get_upload_file_type(file):
+    """Determine file type category for size limit checking."""
+    name = file.name.lower()
+    if name.endswith('.pptx'):
+        return 'pptx'
+    if name.endswith('.pdf') or file.content_type == 'application/pdf':
+        return 'pdf'
+    ct = file.content_type or ''
+    if ct.startswith('image/'):
+        return 'image'
+    if ct.startswith('video/'):
+        return 'video'
+    if ct.startswith('audio/'):
+        return 'audio'
+    return None
+
+
+def _check_file_size(file):
+    """Return an error message string if file exceeds its size limit, else None."""
+    file_type = _get_upload_file_type(file)
+    if not file_type or file_type not in FILE_SIZE_LIMITS:
+        return None
+    limit = FILE_SIZE_LIMITS[file_type]
+    if file.size > limit:
+        return f'"{file.name}" ist zu groß ({file.size // (1024*1024)} MB). Maximale Größe: {FILE_SIZE_LABELS[file_type]}.'
+    return None
+
+
+def _track_task_in_session(request, task_id):
+    """Store task ID in the user's session for cleanup on disconnect."""
+    if 'task_ids' not in request.session:
+        request.session['task_ids'] = []
+    request.session['task_ids'].append(task_id)
+    request.session.modified = True
+
+
 def upload_pdf(request):
     if request.method == 'POST' and request.FILES.get('pdf_file'):
         pdf_file = request.FILES['pdf_file']
 
+        size_error = _check_file_size(pdf_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
+
         # Generate unique task ID
         task_id = str(uuid.uuid4())
-        conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
+        _track_task_in_session(request, task_id)
+        conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Datei wird hochgeladen...'}
 
         # Save uploaded PDF
         fs = FileSystemStorage()
@@ -34,16 +93,16 @@ def upload_pdf(request):
         output_filename = pdf_filename.replace('.pdf', '.pptx')
         output_path = fs.path(output_filename)
 
-        conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+        conversion_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Konvertierung wird gestartet...'}
 
         try:
             # Convert PDF to PPTX with progress callback
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Converting page {current} of {total}...'
+                    'message': f'Seite {current} von {total} wird konvertiert...'
                 }
 
             pdf_to_pptx(pdf_path, output_path, progress_callback)
@@ -51,7 +110,7 @@ def upload_pdf(request):
             conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'pdf_path': pdf_path
@@ -67,7 +126,7 @@ def upload_pdf(request):
             conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -78,7 +137,7 @@ def check_progress(request, task_id):
     """Endpoint to check conversion progress"""
     if task_id in conversion_progress:
         return JsonResponse(conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_file(request, task_id):
@@ -117,7 +176,7 @@ def download_file(request, task_id):
 
                 return response
 
-    return HttpResponse('PPTX file not found', status=404)
+    return HttpResponse('PPTX-Datei nicht gefunden', status=404)
 
 
 def upload_images_to_h5p(request):
@@ -126,9 +185,15 @@ def upload_images_to_h5p(request):
         content_type = request.POST.get('content_type', 'presentation')
         alignment = request.POST.get('alignment', 'middle')
 
+        for f in image_files:
+            size_error = _check_file_size(f)
+            if size_error:
+                return JsonResponse({'error': size_error}, status=400)
+
         # Generate unique task ID
         task_id = str(uuid.uuid4())
-        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+        _track_task_in_session(request, task_id)
+        h5p_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Dateien werden hochgeladen...'}
 
         # Separate PPTX files from image files
         pptx_files = []
@@ -155,8 +220,8 @@ def upload_images_to_h5p(request):
             for idx, pptx_file in enumerate(pptx_files):
                 h5p_conversion_progress[task_id] = {
                     'status': 'converting',
-                    'progress': 10 + int((idx / total_pptx) * 30),
-                    'message': f'Converting PPTX {idx + 1} of {total_pptx}...'
+                    'progress': int((idx / total_pptx) * 40),
+                    'message': f'PPTX {idx + 1} von {total_pptx} wird konvertiert...'
                 }
 
                 # Save PPTX temporarily
@@ -189,17 +254,16 @@ def upload_images_to_h5p(request):
         output_filename = f'h5p_content_{task_id}.h5p'
         output_path = fs.path(output_filename)
 
-        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 40, 'message': 'Creating H5P package...'}
+        h5p_conversion_progress[task_id] = {'status': 'converting', 'progress': 40, 'message': 'H5P-Paket wird erstellt...'}
 
         try:
             # Convert images to H5P with progress callback
-            def progress_callback(current, total, message='Processing'):
-                # Adjust progress: 40-90% for H5P conversion
-                progress = 40 + int((current / total) * 50)
+            def progress_callback(current, total, message='Verarbeitung'):
+                progress = 40 + int((current / total) * 60)
                 h5p_conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'{message} {current} of {total}...'
+                    'message': f'{message} {current} von {total}...'
                 }
 
             images_to_h5p(image_paths, output_path, content_type, alignment, progress_callback)
@@ -207,7 +271,7 @@ def upload_images_to_h5p(request):
             h5p_conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'image_paths': image_paths,
@@ -236,7 +300,7 @@ def upload_images_to_h5p(request):
             h5p_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -247,7 +311,7 @@ def check_h5p_progress(request, task_id):
     """Endpoint to check H5P conversion progress"""
     if task_id in h5p_conversion_progress:
         return JsonResponse(h5p_conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_h5p_file(request, task_id):
@@ -298,16 +362,22 @@ def download_h5p_file(request, task_id):
 
                 return response
 
-    return HttpResponse('H5P file not found', status=404)
+    return HttpResponse('H5P-Datei nicht gefunden', status=404)
 
 
 def upload_compress(request):
     if request.method == 'POST' and request.FILES.getlist('compress_files'):
         uploaded_files = request.FILES.getlist('compress_files')
 
+        for f in uploaded_files:
+            size_error = _check_file_size(f)
+            if size_error:
+                return JsonResponse({'error': size_error}, status=400)
+
         # Generate unique task ID
         task_id = str(uuid.uuid4())
-        compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading files...'}
+        _track_task_in_session(request, task_id)
+        compress_conversion_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Dateien werden hochgeladen...'}
 
         # Save uploaded files and filter to supported types
         fs = FileSystemStorage()
@@ -322,23 +392,23 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': 'No supported files found. Please upload images, videos, or audio files.'
+                'message': 'Keine unterstützten Dateien gefunden. Bitte laden Sie Bilder, Videos, Audio- oder PDF-Dateien hoch.'
             }
-            return JsonResponse({'task_id': task_id, 'error': 'No supported files'}, status=400)
+            return JsonResponse({'task_id': task_id, 'error': 'Keine unterstützten Dateien'}, status=400)
 
         # Create output filename
         output_filename = f'compressed_{task_id}.zip'
         output_path = fs.path(output_filename)
 
-        compress_conversion_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting compression...'}
+        compress_conversion_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Komprimierung wird gestartet...'}
 
         try:
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 compress_conversion_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Compressing file {current} of {total}...'
+                    'message': f'Datei {current} von {total} wird komprimiert...'
                 }
 
             compress_files(file_paths, output_path, progress_callback)
@@ -346,7 +416,7 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Compression complete!',
+                'message': 'Komprimierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'file_paths': file_paths
@@ -365,7 +435,7 @@ def upload_compress(request):
             compress_conversion_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -375,7 +445,7 @@ def upload_compress(request):
 def check_compress_progress(request, task_id):
     if task_id in compress_conversion_progress:
         return JsonResponse(compress_conversion_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_compress_file(request, task_id):
@@ -413,15 +483,20 @@ def download_compress_file(request, task_id):
 
                 return response
 
-    return HttpResponse('Compressed file not found', status=404)
+    return HttpResponse('Komprimierte Datei nicht gefunden', status=404)
 
 
 def upload_pdf_images(request):
     if request.method == 'POST' and request.FILES.get('pdf_file_images'):
         pdf_file = request.FILES['pdf_file_images']
 
+        size_error = _check_file_size(pdf_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
+
         task_id = str(uuid.uuid4())
-        pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Uploading file...'}
+        _track_task_in_session(request, task_id)
+        pdf_images_progress[task_id] = {'status': 'uploading', 'progress': 0, 'message': 'Datei wird hochgeladen...'}
 
         fs = FileSystemStorage()
         pdf_filename = fs.save(pdf_file.name, pdf_file)
@@ -430,15 +505,15 @@ def upload_pdf_images(request):
         output_filename = f'pdf_images_{task_id}.zip'
         output_path = fs.path(output_filename)
 
-        pdf_images_progress[task_id] = {'status': 'converting', 'progress': 10, 'message': 'Starting conversion...'}
+        pdf_images_progress[task_id] = {'status': 'converting', 'progress': 0, 'message': 'Konvertierung wird gestartet...'}
 
         try:
             def progress_callback(current, total):
-                progress = 10 + int((current / total) * 80)
+                progress = int((current / total) * 100)
                 pdf_images_progress[task_id] = {
                     'status': 'converting',
                     'progress': progress,
-                    'message': f'Converting page {current} of {total}...'
+                    'message': f'Seite {current} von {total} wird konvertiert...'
                 }
 
             pdf_to_images_zip(pdf_path, output_path, progress_callback)
@@ -446,7 +521,7 @@ def upload_pdf_images(request):
             pdf_images_progress[task_id] = {
                 'status': 'complete',
                 'progress': 100,
-                'message': 'Conversion complete!',
+                'message': 'Konvertierung abgeschlossen!',
                 'output_filename': output_filename,
                 'output_path': output_path,
                 'pdf_path': pdf_path
@@ -460,7 +535,7 @@ def upload_pdf_images(request):
             pdf_images_progress[task_id] = {
                 'status': 'error',
                 'progress': 0,
-                'message': f'Error: {str(e)}'
+                'message': f'Fehler: {str(e)}'
             }
             return JsonResponse({'task_id': task_id, 'error': str(e)}, status=500)
 
@@ -470,7 +545,7 @@ def upload_pdf_images(request):
 def check_pdf_images_progress(request, task_id):
     if task_id in pdf_images_progress:
         return JsonResponse(pdf_images_progress[task_id])
-    return JsonResponse({'status': 'not_found', 'message': 'Task not found'}, status=404)
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
 
 
 def download_pdf_images_file(request, task_id):
@@ -505,7 +580,85 @@ def download_pdf_images_file(request, task_id):
 
                 return response
 
-    return HttpResponse('PDF images file not found', status=404)
+    return HttpResponse('PDF-Bilder-Datei nicht gefunden', status=404)
+
+
+def _cleanup_task(task_id):
+    """Delete all files associated with a task ID from any converter."""
+    # PDF to PPTX
+    if task_id in conversion_progress:
+        data = conversion_progress[task_id]
+        for key in ('output_path', 'pdf_path'):
+            path = data.get(key)
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        del conversion_progress[task_id]
+
+    # H5P
+    if task_id in h5p_conversion_progress:
+        data = h5p_conversion_progress[task_id]
+        path = data.get('output_path')
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        for img_path in data.get('image_paths', []):
+            if os.path.exists(img_path):
+                try:
+                    os.remove(img_path)
+                except OSError:
+                    pass
+        for temp_dir in data.get('temp_dirs', []):
+            if os.path.exists(temp_dir):
+                try:
+                    shutil.rmtree(temp_dir)
+                except OSError:
+                    pass
+        del h5p_conversion_progress[task_id]
+
+    # Compress
+    if task_id in compress_conversion_progress:
+        data = compress_conversion_progress[task_id]
+        path = data.get('output_path')
+        if path and os.path.exists(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+        for file_path in data.get('file_paths', []):
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except OSError:
+                    pass
+        del compress_conversion_progress[task_id]
+
+    # PDF to Images
+    if task_id in pdf_images_progress:
+        data = pdf_images_progress[task_id]
+        for key in ('output_path', 'pdf_path'):
+            path = data.get(key)
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        del pdf_images_progress[task_id]
+
+
+@csrf_exempt
+def cleanup_session(request):
+    """Clean up all files for the current session when user disconnects."""
+    task_ids = request.session.get('task_ids', [])
+    for task_id in task_ids:
+        _cleanup_task(task_id)
+    request.session['task_ids'] = []
+    request.session.modified = True
+    return JsonResponse({'status': 'ok'})
 
 
 # Image size thresholds per purpose: (good_width, good_height, min_width, min_height)
@@ -536,6 +689,11 @@ IMAGE_THRESHOLDS = {
 def check_image(request):
     if request.method == 'POST' and request.FILES.get('image_file'):
         image_file = request.FILES['image_file']
+
+        size_error = _check_file_size(image_file)
+        if size_error:
+            return JsonResponse({'error': size_error}, status=400)
+
         purposes = request.POST.getlist('purposes')
 
         if not purposes:

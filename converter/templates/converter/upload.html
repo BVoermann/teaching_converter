@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Converter</title>
+    <title>Dateikonverter</title>
     <style>
         * {
             margin: 0;
@@ -473,16 +473,16 @@
     <div class="container">
         <div class="tabs">
             <div class="tab active" data-tab="pdf-to-pptx">
-                <span>📄 PDF to PowerPoint</span>
+                <span>📄 PDF zu PowerPoint</span>
             </div>
             <div class="tab" data-tab="images-to-h5p">
-                <span>🖼️ Images or Presentations to H5P</span>
+                <span>🖼️ Bilder oder Präsentationen zu H5P</span>
             </div>
             <div class="tab" data-tab="compress-files">
-                <span>📦 Compress Files</span>
+                <span>📦 Dateien komprimieren</span>
             </div>
             <div class="tab" data-tab="pdf-to-images">
-                <span>🖼️ PDF to Images</span>
+                <span>🖼️ PDF zu Bildern</span>
             </div>
             <div class="tab" data-tab="image-checker">
                 <span>🔍 Bildprüfer</span>
@@ -491,24 +491,24 @@
 
         <!-- PDF to PPTX Tab Content -->
         <div class="tab-content active" id="pdf-to-pptx">
-            <h1>PDF to PowerPoint</h1>
-            <p class="subtitle">Convert your PDF documents to PowerPoint presentations</p>
+            <h1>PDF zu PowerPoint</h1>
+            <p class="subtitle">Konvertieren Sie Ihre PDF-Dokumente in PowerPoint-Präsentationen</p>
 
             <form id="pdfUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="pdfUploadArea">
                     <div class="upload-icon">📄</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">PDF files only</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Datei hierher ziehen</div>
+                    <div class="upload-hint">Nur PDF-Dateien</div>
                     <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
                 </div>
                 <div class="file-list" id="pdfFileName"></div>
-                <button type="submit" class="convert-btn" id="pdfConvertBtn">Convert to PowerPoint</button>
+                <button type="submit" class="convert-btn" id="pdfConvertBtn">Zu PowerPoint konvertieren</button>
             </form>
 
             <div class="progress-container" id="pdfProgressContainer">
                 <div class="progress-label">
-                    <span id="pdfProgressLabel">Processing...</span>
+                    <span id="pdfProgressLabel">Verarbeitung...</span>
                     <span id="pdfProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -518,53 +518,53 @@
             </div>
 
             <div class="success-icon" id="pdfSuccessIcon">✓</div>
-            <button class="download-btn" id="pdfDownloadBtn">Download PowerPoint</button>
+            <button class="download-btn" id="pdfDownloadBtn">PowerPoint herunterladen</button>
             <div class="error-message" id="pdfErrorMessage"></div>
         </div>
 
         <!-- Images to H5P Tab Content -->
         <div class="tab-content" id="images-to-h5p">
-            <h1>Images or Presentations to H5P</h1>
-            <p class="subtitle">Convert your images or PPTX presentations to H5P interactive content</p>
+            <h1>Bilder oder Präsentationen zu H5P</h1>
+            <p class="subtitle">Konvertieren Sie Ihre Bilder oder PPTX-Präsentationen in interaktive H5P-Inhalte</p>
 
             <form id="h5pUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="h5pUploadArea">
                     <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">Multiple image and PPTX files</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Dateien hierher ziehen</div>
+                    <div class="upload-hint">Mehrere Bild- und PPTX-Dateien</div>
                     <input type="file" name="image_files" id="imageFiles" accept="image/*,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" multiple>
                 </div>
                 <div class="file-list" id="h5pFileList"></div>
 
                 <div class="options-group" id="h5pOptions">
-                    <label class="option-label">Image Alignment</label>
+                    <label class="option-label">Bildausrichtung</label>
                     <div class="radio-group">
                         <div class="radio-option">
                             <input type="radio" id="alignLeft" name="alignment" value="left">
-                            <label for="alignLeft">Left</label>
+                            <label for="alignLeft">Links</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignMiddle" name="alignment" value="middle" checked>
-                            <label for="alignMiddle">Middle</label>
+                            <label for="alignMiddle">Mitte</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignRight" name="alignment" value="right">
-                            <label for="alignRight">Right</label>
+                            <label for="alignRight">Rechts</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="alignFullscreen" name="alignment" value="fullscreen">
-                            <label for="alignFullscreen">Fullscreen</label>
+                            <label for="alignFullscreen">Vollbild</label>
                         </div>
                     </div>
                 </div>
 
-                <button type="submit" class="convert-btn" id="h5pConvertBtn">Convert to H5P</button>
+                <button type="submit" class="convert-btn" id="h5pConvertBtn">Zu H5P konvertieren</button>
             </form>
 
             <div class="progress-container" id="h5pProgressContainer">
                 <div class="progress-label">
-                    <span id="h5pProgressLabel">Processing...</span>
+                    <span id="h5pProgressLabel">Verarbeitung...</span>
                     <span id="h5pProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -574,30 +574,30 @@
             </div>
 
             <div class="success-icon" id="h5pSuccessIcon">✓</div>
-            <button class="download-btn" id="h5pDownloadBtn">Download H5P</button>
+            <button class="download-btn" id="h5pDownloadBtn">H5P herunterladen</button>
             <div class="error-message" id="h5pErrorMessage"></div>
         </div>
 
         <!-- PDF to Images Tab Content -->
         <div class="tab-content" id="pdf-to-images">
-            <h1>PDF to Images</h1>
-            <p class="subtitle">Convert each page of your PDF to a PNG image</p>
+            <h1>PDF zu Bildern</h1>
+            <p class="subtitle">Konvertieren Sie jede Seite Ihrer PDF in ein PNG-Bild</p>
 
             <form id="pdfImagesUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="pdfImagesUploadArea">
                     <div class="upload-icon">🖼️</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">PDF files only</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Datei hierher ziehen</div>
+                    <div class="upload-hint">Nur PDF-Dateien</div>
                     <input type="file" name="pdf_file_images" id="pdfImagesFile" accept=".pdf" required>
                 </div>
                 <div class="file-list" id="pdfImagesFileName"></div>
-                <button type="submit" class="convert-btn" id="pdfImagesConvertBtn">Convert to Images</button>
+                <button type="submit" class="convert-btn" id="pdfImagesConvertBtn">Zu Bildern konvertieren</button>
             </form>
 
             <div class="progress-container" id="pdfImagesProgressContainer">
                 <div class="progress-label">
-                    <span id="pdfImagesProgressLabel">Processing...</span>
+                    <span id="pdfImagesProgressLabel">Verarbeitung...</span>
                     <span id="pdfImagesProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -607,30 +607,30 @@
             </div>
 
             <div class="success-icon" id="pdfImagesSuccessIcon">✓</div>
-            <button class="download-btn" id="pdfImagesDownloadBtn">Download Images (ZIP)</button>
+            <button class="download-btn" id="pdfImagesDownloadBtn">Bilder herunterladen (ZIP)</button>
             <div class="error-message" id="pdfImagesErrorMessage"></div>
         </div>
 
         <!-- Compress Files Tab Content -->
         <div class="tab-content" id="compress-files">
-            <h1>Compress Files</h1>
-            <p class="subtitle">Shrink your images, videos, and audio files</p>
+            <h1>Dateien komprimieren</h1>
+            <p class="subtitle">Verkleinern Sie Ihre Bilder, Videos, Audio- und PDF-Dateien</p>
 
             <form id="compressUploadForm" method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="upload-area" id="compressUploadArea">
                     <div class="upload-icon">📦</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">Images, videos, and audio files</div>
-                    <input type="file" name="compress_files" id="compressFiles" accept="image/*,video/*,audio/*" multiple>
+                    <div class="upload-text">Klicken zum Hochladen oder Dateien hierher ziehen</div>
+                    <div class="upload-hint">Bilder, Videos, Audio- und PDF-Dateien</div>
+                    <input type="file" name="compress_files" id="compressFiles" accept="image/*,video/*,audio/*,.pdf,application/pdf" multiple>
                 </div>
                 <div class="file-list" id="compressFileList"></div>
-                <button type="submit" class="convert-btn" id="compressBtn">Compress Files</button>
+                <button type="submit" class="convert-btn" id="compressBtn">Dateien komprimieren</button>
             </form>
 
             <div class="progress-container" id="compressProgressContainer">
                 <div class="progress-label">
-                    <span id="compressProgressLabel">Processing...</span>
+                    <span id="compressProgressLabel">Verarbeitung...</span>
                     <span id="compressProgressPercent">0%</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -640,7 +640,7 @@
             </div>
 
             <div class="success-icon" id="compressSuccessIcon">✓</div>
-            <button class="download-btn" id="compressDownloadBtn">Download Compressed Files</button>
+            <button class="download-btn" id="compressDownloadBtn">Komprimierte Dateien herunterladen</button>
             <div class="error-message" id="compressErrorMessage"></div>
         </div>
 
@@ -737,6 +737,12 @@
             pdfUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type === 'application/pdf') {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    pdfErrorMessage.textContent = sizeError;
+                    pdfErrorMessage.style.display = 'block';
+                    return;
+                }
                 pdfFile.files = files;
                 displayPdfFileName(files[0]);
             }
@@ -744,6 +750,14 @@
 
         pdfFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    pdfErrorMessage.textContent = sizeError;
+                    pdfErrorMessage.style.display = 'block';
+                    pdfFile.value = '';
+                    return;
+                }
+                pdfErrorMessage.style.display = 'none';
                 displayPdfFileName(e.target.files[0]);
             }
         });
@@ -757,10 +771,39 @@
         function formatFileSize(bytes) {
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
         }
 
-        pdfUploadForm.addEventListener('submit', async (e) => {
+        // File size limits in bytes
+        const FILE_SIZE_LIMITS = {
+            image: { max: 50 * 1024 * 1024, label: '50 MB' },
+            pdf: { max: 100 * 1024 * 1024, label: '100 MB' },
+            audio: { max: 500 * 1024 * 1024, label: '500 MB' },
+            video: { max: 2 * 1024 * 1024 * 1024, label: '2 GB' },
+            pptx: { max: 100 * 1024 * 1024, label: '100 MB' },
+        };
+
+        function getFileSizeCategory(file) {
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return 'pdf';
+            if (file.name.toLowerCase().endsWith('.pptx') || file.type.includes('presentationml')) return 'pptx';
+            if (file.type.startsWith('image/')) return 'image';
+            if (file.type.startsWith('video/')) return 'video';
+            if (file.type.startsWith('audio/')) return 'audio';
+            return null;
+        }
+
+        function checkFileSize(file) {
+            const category = getFileSizeCategory(file);
+            if (!category || !FILE_SIZE_LIMITS[category]) return null;
+            const limit = FILE_SIZE_LIMITS[category];
+            if (file.size > limit.max) {
+                return `"${file.name}" ist zu groß (${formatFileSize(file.size)}). Maximale Größe für diesen Dateityp: ${limit.label}.`;
+            }
+            return null;
+        }
+
+        pdfUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             pdfConvertBtn.disabled = true;
@@ -771,44 +814,43 @@
             pdfProgressContainer.style.display = 'block';
             pdfProgressBar.style.width = '0%';
             pdfProgressPercent.textContent = '0%';
-            pdfProgressLabel.textContent = 'Uploading...';
+            pdfProgressLabel.textContent = 'Hochladen...';
             pdfStatusMessage.textContent = '';
 
             const formData = new FormData(pdfUploadForm);
+            const xhr = new XMLHttpRequest();
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updatePdfProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updatePdfProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showPdfError(data.error);
+                        pdfConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updatePdfProgress(100, 'Uploaded', 'File uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    // Reset progress bar for conversion phase
+                    updatePdfProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollPdfProgress(data.task_id);
+                } else {
+                    showPdfError('Upload fehlgeschlagen');
+                    pdfConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollPdfProgress(data.task_id);
-
-            } catch (error) {
-                showPdfError(error.message);
+            xhr.addEventListener('error', () => {
+                showPdfError('Upload fehlgeschlagen');
                 pdfConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '');
+            xhr.send(formData);
         });
 
         async function pollPdfProgress(taskId) {
@@ -817,7 +859,7 @@
                     const response = await fetch(`/progress/${taskId}/`);
                     const data = await response.json();
 
-                    updatePdfProgress(data.progress, data.message, data.message);
+                    updatePdfProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -828,7 +870,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showPdfError('Failed to check conversion status');
+                    showPdfError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -904,7 +946,24 @@
         });
 
         function handleFiles(files) {
-            selectedImages = files;
+            const errors = [];
+            const validFiles = [];
+            for (const file of files) {
+                const sizeError = checkFileSize(file);
+                if (sizeError) {
+                    errors.push(sizeError);
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (errors.length > 0) {
+                h5pErrorMessage.textContent = errors.join(' ');
+                h5pErrorMessage.style.display = 'block';
+            } else {
+                h5pErrorMessage.style.display = 'none';
+            }
+            if (validFiles.length === 0) return;
+            selectedImages = validFiles;
             displayImageList();
             h5pOptions.style.display = 'block';
             h5pConvertBtn.style.display = 'block';
@@ -943,12 +1002,12 @@
             });
         }
 
-        h5pUploadForm.addEventListener('submit', async (e) => {
+        h5pUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             // Validate that files are selected
             if (!selectedImages || selectedImages.length === 0) {
-                h5pErrorMessage.textContent = 'Please select at least one file to convert.';
+                h5pErrorMessage.textContent = 'Bitte wählen Sie mindestens eine Datei zum Konvertieren aus.';
                 h5pErrorMessage.style.display = 'block';
                 return;
             }
@@ -961,7 +1020,7 @@
             h5pProgressContainer.style.display = 'block';
             h5pProgressBar.style.width = '0%';
             h5pProgressPercent.textContent = '0%';
-            h5pProgressLabel.textContent = 'Uploading...';
+            h5pProgressLabel.textContent = 'Hochladen...';
             h5pStatusMessage.textContent = '';
 
             const formData = new FormData();
@@ -972,39 +1031,38 @@
             formData.append('alignment', document.querySelector('input[name="alignment"]:checked').value);
             formData.append('csrfmiddlewaretoken', document.querySelector('input[name="csrfmiddlewaretoken"]').value);
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updateH5pProgress(uploadProgress, 'Uploading...', 'Preparing your images...');
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateH5pProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showH5pError(data.error);
+                        h5pConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/images-to-h5p/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updateH5pProgress(100, 'Uploaded', 'Images uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updateH5pProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollH5pProgress(data.task_id);
+                } else {
+                    showH5pError('Upload fehlgeschlagen');
+                    h5pConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollH5pProgress(data.task_id);
-
-            } catch (error) {
-                showH5pError(error.message);
+            xhr.addEventListener('error', () => {
+                showH5pError('Upload fehlgeschlagen');
                 h5pConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/images-to-h5p/');
+            xhr.send(formData);
         });
 
         async function pollH5pProgress(taskId) {
@@ -1013,7 +1071,7 @@
                     const response = await fetch(`/h5p-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updateH5pProgress(data.progress, data.message, data.message);
+                    updateH5pProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1024,7 +1082,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showH5pError('Failed to check conversion status');
+                    showH5pError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -1071,7 +1129,9 @@
         const supportedTypes = ['image/', 'video/', 'audio/'];
 
         function isSupportedFile(file) {
-            return supportedTypes.some(type => file.type.startsWith(type));
+            return supportedTypes.some(type => file.type.startsWith(type)) ||
+                   file.type === 'application/pdf' ||
+                   file.name.toLowerCase().endsWith('.pdf');
         }
 
         compressUploadArea.addEventListener('click', () => compressFiles.click());
@@ -1101,7 +1161,24 @@
         });
 
         function handleCompressFiles(files) {
-            selectedCompressFiles = files;
+            const errors = [];
+            const validFiles = [];
+            for (const file of files) {
+                const sizeError = checkFileSize(file);
+                if (sizeError) {
+                    errors.push(sizeError);
+                } else {
+                    validFiles.push(file);
+                }
+            }
+            if (errors.length > 0) {
+                compressErrorMessage.textContent = errors.join(' ');
+                compressErrorMessage.style.display = 'block';
+            } else {
+                compressErrorMessage.style.display = 'none';
+            }
+            if (validFiles.length === 0) return;
+            selectedCompressFiles = validFiles;
             displayCompressFileList();
             compressBtn.style.display = 'block';
         }
@@ -1110,6 +1187,7 @@
             if (file.type.startsWith('image/')) return '🖼️';
             if (file.type.startsWith('video/')) return '🎬';
             if (file.type.startsWith('audio/')) return '🎵';
+            if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) return '📄';
             return '📄';
         }
 
@@ -1141,11 +1219,11 @@
             });
         }
 
-        compressUploadForm.addEventListener('submit', async (e) => {
+        compressUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             if (!selectedCompressFiles || selectedCompressFiles.length === 0) {
-                compressErrorMessage.textContent = 'Please select at least one file to compress.';
+                compressErrorMessage.textContent = 'Bitte wählen Sie mindestens eine Datei zum Komprimieren aus.';
                 compressErrorMessage.style.display = 'block';
                 return;
             }
@@ -1158,7 +1236,7 @@
             compressProgressContainer.style.display = 'block';
             compressProgressBar.style.width = '0%';
             compressProgressPercent.textContent = '0%';
-            compressProgressLabel.textContent = 'Uploading...';
+            compressProgressLabel.textContent = 'Hochladen...';
             compressStatusMessage.textContent = '';
 
             const formData = new FormData();
@@ -1167,39 +1245,38 @@
             });
             formData.append('csrfmiddlewaretoken', document.querySelector('#compressUploadForm input[name="csrfmiddlewaretoken"]').value);
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updateCompressProgress(uploadProgress, 'Uploading...', 'Preparing your files...');
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateCompressProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showCompressError(data.error);
+                        compressBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/compress-files/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updateCompressProgress(100, 'Uploaded', 'Files uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updateCompressProgress(0, 'Komprimierung...', 'Komprimierung wird gestartet...');
+                    pollCompressProgress(data.task_id);
+                } else {
+                    showCompressError('Upload fehlgeschlagen');
+                    compressBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollCompressProgress(data.task_id);
-
-            } catch (error) {
-                showCompressError(error.message);
+            xhr.addEventListener('error', () => {
+                showCompressError('Upload fehlgeschlagen');
                 compressBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/compress-files/');
+            xhr.send(formData);
         });
 
         async function pollCompressProgress(taskId) {
@@ -1208,7 +1285,7 @@
                     const response = await fetch(`/compress-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updateCompressProgress(data.progress, data.message, data.message);
+                    updateCompressProgress(data.progress, 'Komprimierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1219,7 +1296,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showCompressError('Failed to check compression status');
+                    showCompressError('Komprimierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -1277,6 +1354,12 @@
             pdfImagesUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type === 'application/pdf') {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    pdfImagesErrorMessage.textContent = sizeError;
+                    pdfImagesErrorMessage.style.display = 'block';
+                    return;
+                }
                 pdfImagesFile.files = files;
                 displayPdfImagesFileName(files[0]);
             }
@@ -1284,6 +1367,14 @@
 
         pdfImagesFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    pdfImagesErrorMessage.textContent = sizeError;
+                    pdfImagesErrorMessage.style.display = 'block';
+                    pdfImagesFile.value = '';
+                    return;
+                }
+                pdfImagesErrorMessage.style.display = 'none';
                 displayPdfImagesFileName(e.target.files[0]);
             }
         });
@@ -1294,7 +1385,7 @@
             pdfImagesConvertBtn.style.display = 'block';
         }
 
-        pdfImagesUploadForm.addEventListener('submit', async (e) => {
+        pdfImagesUploadForm.addEventListener('submit', (e) => {
             e.preventDefault();
 
             pdfImagesConvertBtn.disabled = true;
@@ -1305,44 +1396,42 @@
             pdfImagesProgressContainer.style.display = 'block';
             pdfImagesProgressBar.style.width = '0%';
             pdfImagesProgressPercent.textContent = '0%';
-            pdfImagesProgressLabel.textContent = 'Uploading...';
+            pdfImagesProgressLabel.textContent = 'Hochladen...';
             pdfImagesStatusMessage.textContent = '';
 
             const formData = new FormData(pdfImagesUploadForm);
+            const xhr = new XMLHttpRequest();
 
-            try {
-                let uploadProgress = 0;
-                const uploadInterval = setInterval(() => {
-                    if (uploadProgress < 90) {
-                        uploadProgress += 10;
-                        updatePdfImagesProgress(uploadProgress, 'Uploading...', 'Preparing your file...');
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updatePdfImagesProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showPdfImagesError(data.error);
+                        pdfImagesConvertBtn.disabled = false;
+                        return;
                     }
-                }, 100);
-
-                const response = await fetch('/pdf-to-images/', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                clearInterval(uploadInterval);
-                updatePdfImagesProgress(100, 'Uploaded', 'File uploaded successfully');
-
-                if (!response.ok) {
-                    throw new Error('Upload failed');
+                    updatePdfImagesProgress(0, 'Konvertierung...', 'Konvertierung wird gestartet...');
+                    pollPdfImagesProgress(data.task_id);
+                } else {
+                    showPdfImagesError('Upload fehlgeschlagen');
+                    pdfImagesConvertBtn.disabled = false;
                 }
+            });
 
-                const data = await response.json();
-
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-
-                pollPdfImagesProgress(data.task_id);
-
-            } catch (error) {
-                showPdfImagesError(error.message);
+            xhr.addEventListener('error', () => {
+                showPdfImagesError('Upload fehlgeschlagen');
                 pdfImagesConvertBtn.disabled = false;
-            }
+            });
+
+            xhr.open('POST', '/pdf-to-images/');
+            xhr.send(formData);
         });
 
         async function pollPdfImagesProgress(taskId) {
@@ -1351,7 +1440,7 @@
                     const response = await fetch(`/pdf-images-progress/${taskId}/`);
                     const data = await response.json();
 
-                    updatePdfImagesProgress(data.progress, data.message, data.message);
+                    updatePdfImagesProgress(data.progress, 'Konvertierung...', data.message);
 
                     if (data.status === 'complete') {
                         clearInterval(pollInterval);
@@ -1362,7 +1451,7 @@
                     }
                 } catch (error) {
                     clearInterval(pollInterval);
-                    showPdfImagesError('Failed to check conversion status');
+                    showPdfImagesError('Konvertierungsstatus konnte nicht abgerufen werden');
                 }
             }, 500);
         }
@@ -1415,6 +1504,12 @@
             checkerUploadArea.classList.remove('dragover');
             const files = e.dataTransfer.files;
             if (files.length > 0 && files[0].type.startsWith('image/')) {
+                const sizeError = checkFileSize(files[0]);
+                if (sizeError) {
+                    checkerErrorMessage.textContent = sizeError;
+                    checkerErrorMessage.style.display = 'block';
+                    return;
+                }
                 checkerFile.files = files;
                 displayCheckerFileName(files[0]);
             }
@@ -1422,6 +1517,14 @@
 
         checkerFile.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
+                const sizeError = checkFileSize(e.target.files[0]);
+                if (sizeError) {
+                    checkerErrorMessage.textContent = sizeError;
+                    checkerErrorMessage.style.display = 'block';
+                    checkerFile.value = '';
+                    return;
+                }
+                checkerErrorMessage.style.display = 'none';
                 displayCheckerFileName(e.target.files[0]);
             }
         });
@@ -1511,6 +1614,10 @@
             checkerResults.innerHTML = html;
             checkerResults.classList.add('visible');
         }
+        // Clean up all uploaded/converted files when user leaves the page
+        window.addEventListener('beforeunload', () => {
+            navigator.sendBeacon('/cleanup-session/');
+        });
     </script>
 </body>
 </html>

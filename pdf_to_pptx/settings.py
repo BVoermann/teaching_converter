@@ -55,6 +55,10 @@ INSTALLED_APPS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Allow uploads up to 2.5 GB (video limit is 2 GB, with some overhead)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 2684354560  # 2.5 GB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760    # 10 MB - files larger than this go to disk
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

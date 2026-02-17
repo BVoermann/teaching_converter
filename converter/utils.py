@@ -454,6 +454,7 @@ def pdf_to_images_zip(pdf_path, output_zip_path, progress_callback=None):
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.tiff', '.tif'}
 VIDEO_EXTENSIONS = {'.mp4', '.avi', '.mov', '.mkv', '.webm', '.wmv', '.flv'}
 AUDIO_EXTENSIONS = {'.mp3', '.wav', '.flac', '.aac', '.ogg', '.m4a', '.wma'}
+PDF_EXTENSIONS = {'.pdf'}
 
 
 def get_file_type(filename):
@@ -464,6 +465,8 @@ def get_file_type(filename):
         return 'video'
     if ext in AUDIO_EXTENSIONS:
         return 'audio'
+    if ext in PDF_EXTENSIONS:
+        return 'pdf'
     return None
 
 
@@ -520,6 +523,23 @@ def compress_audio(input_path, output_path):
     return output_path
 
 
+def compress_pdf(input_path, output_path):
+    result = subprocess.run(
+        [
+            'gs', '-sDEVICE=pdfwrite',
+            '-dCompatibilityLevel=1.4',
+            '-dPDFSETTINGS=/ebook',
+            '-dNOPAUSE', '-dQUIET', '-dBATCH',
+            f'-sOutputFile={output_path}',
+            input_path
+        ],
+        capture_output=True, text=True, timeout=600
+    )
+    if result.returncode != 0:
+        raise Exception(f"Ghostscript PDF-Komprimierung fehlgeschlagen: {result.stderr}")
+    return output_path
+
+
 def compress_files(file_paths, output_zip_path, progress_callback=None):
     total = len(file_paths)
 
@@ -554,6 +574,11 @@ def compress_files(file_paths, output_zip_path, progress_callback=None):
             elif file_type == 'audio':
                 out_path = os.path.join(temp_dir, name + '.mp3')
                 compress_audio(file_path, out_path)
+                compressed_paths.append(out_path)
+
+            elif file_type == 'pdf':
+                out_path = os.path.join(temp_dir, name + '.pdf')
+                compress_pdf(file_path, out_path)
                 compressed_paths.append(out_path)
 
             if progress_callback:
