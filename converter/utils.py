@@ -8,6 +8,7 @@ import zipfile
 import base64
 import subprocess
 import shutil
+import uuid
 from PIL import Image
 
 
@@ -315,7 +316,7 @@ def create_presentation_content(image_files, alignment):
                             },
                             "alt": "Image"
                         },
-                        "subContentId": f"image-{image_files.index(img_data)}"
+                        "subContentId": str(uuid.uuid4())
                     }
                 }
             ],
@@ -372,7 +373,7 @@ def create_interactive_book_content(image_files, alignment):
                                 "params": {
                                     "text": f'<p style="text-align: {css_align};"><img src="images/{img_data["filename"]}" alt="Image {i + 1}" style="width: {img_width}; height: auto; max-width: 100%;" /></p>'
                                 },
-                                "subContentId": f"text-{i}",
+                                "subContentId": str(uuid.uuid4()),
                                 "metadata": {
                                     "contentType": "Text",
                                     "license": "U",
@@ -383,7 +384,7 @@ def create_interactive_book_content(image_files, alignment):
                         }
                     ]
                 },
-                "subContentId": f"column-{i}",
+                "subContentId": str(uuid.uuid4()),
                 "metadata": {
                     "contentType": "Column",
                     "license": "U",
