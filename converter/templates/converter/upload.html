@@ -886,7 +886,30 @@
             pdfSuccessIcon.style.display = 'block';
             pdfDownloadBtn.style.display = 'block';
             pdfDownloadBtn.onclick = () => {
-                window.location.href = `/download/${taskId}/`;
+                pdfDownloadBtn.disabled = true;
+                fetch(`/download/${taskId}/`)
+                    .then(r => {
+                        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+                        const cd = r.headers.get('Content-Disposition');
+                        const m = cd && cd.match(/filename="([^"]+)"/);
+                        const filename = m ? m[1] : 'presentation.pptx';
+                        return r.blob().then(b => [b, filename]);
+                    })
+                    .then(([blob, filename]) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        pdfDownloadBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showPdfError('Download fehlgeschlagen: ' + err.message);
+                        pdfDownloadBtn.disabled = false;
+                    });
             };
         }
 
@@ -1098,7 +1121,30 @@
             h5pSuccessIcon.style.display = 'block';
             h5pDownloadBtn.style.display = 'block';
             h5pDownloadBtn.onclick = () => {
-                window.location.href = `/h5p-download/${taskId}/`;
+                h5pDownloadBtn.disabled = true;
+                fetch(`/h5p-download/${taskId}/`)
+                    .then(r => {
+                        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+                        const cd = r.headers.get('Content-Disposition');
+                        const m = cd && cd.match(/filename="([^"]+)"/);
+                        const filename = m ? m[1] : 'h5p_content.h5p';
+                        return r.blob().then(b => [b, filename]);
+                    })
+                    .then(([blob, filename]) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        h5pDownloadBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showH5pError('Download fehlgeschlagen: ' + err.message);
+                        h5pDownloadBtn.disabled = false;
+                    });
             };
         }
 
@@ -1312,7 +1358,30 @@
             compressSuccessIcon.style.display = 'block';
             compressDownloadBtn.style.display = 'block';
             compressDownloadBtn.onclick = () => {
-                window.location.href = `/compress-download/${taskId}/`;
+                compressDownloadBtn.disabled = true;
+                fetch(`/compress-download/${taskId}/`)
+                    .then(r => {
+                        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+                        const cd = r.headers.get('Content-Disposition');
+                        const m = cd && cd.match(/filename="([^"]+)"/);
+                        const filename = m ? m[1] : 'compressed.zip';
+                        return r.blob().then(b => [b, filename]);
+                    })
+                    .then(([blob, filename]) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        compressDownloadBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showCompressError('Download fehlgeschlagen: ' + err.message);
+                        compressDownloadBtn.disabled = false;
+                    });
             };
         }
 
@@ -1467,7 +1536,30 @@
             pdfImagesSuccessIcon.style.display = 'block';
             pdfImagesDownloadBtn.style.display = 'block';
             pdfImagesDownloadBtn.onclick = () => {
-                window.location.href = `/pdf-images-download/${taskId}/`;
+                pdfImagesDownloadBtn.disabled = true;
+                fetch(`/pdf-images-download/${taskId}/`)
+                    .then(r => {
+                        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+                        const cd = r.headers.get('Content-Disposition');
+                        const m = cd && cd.match(/filename="([^"]+)"/);
+                        const filename = m ? m[1] : 'pdf_images.zip';
+                        return r.blob().then(b => [b, filename]);
+                    })
+                    .then(([blob, filename]) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        pdfImagesDownloadBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showPdfImagesError('Download fehlgeschlagen: ' + err.message);
+                        pdfImagesDownloadBtn.disabled = false;
+                    });
             };
         }
 

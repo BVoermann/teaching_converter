@@ -116,55 +116,6 @@ def pptx_to_images(pptx_path, output_dir, progress_callback=None):
     return image_paths
 
 
-def resize_to_aspect_ratio(img, target_ratio=2.0):
-    """
-    Resize image to target aspect ratio (width/height)
-
-    Args:
-        img: PIL Image object
-        target_ratio: Target aspect ratio (default 2.0 for 2:1)
-
-    Returns:
-        PIL Image object with target aspect ratio
-    """
-    original_width, original_height = img.size
-    current_ratio = original_width / original_height
-
-    if abs(current_ratio - target_ratio) < 0.01:
-        # Already close to target ratio
-        return img
-
-    # Calculate new dimensions to fit target ratio
-    if current_ratio > target_ratio:
-        # Image is too wide, crop width
-        new_width = int(original_height * target_ratio)
-        new_height = original_height
-        # Center crop
-        left = (original_width - new_width) // 2
-        top = 0
-        right = left + new_width
-        bottom = original_height
-    else:
-        # Image is too tall, crop height
-        new_width = original_width
-        new_height = int(original_width / target_ratio)
-        # Center crop
-        left = 0
-        top = (original_height - new_height) // 2
-        right = original_width
-        bottom = top + new_height
-
-    # Crop to target aspect ratio
-    cropped_img = img.crop((left, top, right, bottom))
-
-    # Optionally resize to a standard size (e.g., 1600x800 for 2:1)
-    # This ensures consistent sizing across all images
-    standard_width = 1600
-    standard_height = int(standard_width / target_ratio)
-    resized_img = cropped_img.resize((standard_width, standard_height), Image.LANCZOS)
-
-    return resized_img
-
 
 def images_to_h5p(image_paths, output_path, content_type='presentation', alignment='middle', progress_callback=None):
     """
@@ -208,8 +159,11 @@ def images_to_h5p(image_paths, output_path, content_type='presentation', alignme
             elif img.mode != 'RGB':
                 img = img.convert('RGB')
 
-            # Resize to 2:1 aspect ratio (width = 2 × height)
-            img = resize_to_aspect_ratio(img, target_ratio=2.0)
+            # Scale down if too large, preserving the original aspect ratio (no cropping)
+            max_width = 1920
+            if img.width > max_width:
+                ratio = max_width / img.width
+                img = img.resize((max_width, int(img.height * ratio)), Image.LANCZOS)
 
             img_filename = f'image_{i}.png'  # Always save as PNG for consistency
             img_save_path = os.path.join(images_dir, img_filename)
