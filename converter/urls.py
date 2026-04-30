@@ -16,4 +16,5 @@ urlpatterns = [
     path('pdf-images-download/<str:task_id>/', views.download_pdf_images_file, name='download_pdf_images_file'),
     path('check-image/', views.check_image, name='check_image'),
     path('cleanup-session/', views.cleanup_session, name='cleanup_session'),
+    path('impressum/', views.impressum, name='impressum'),
 ]
