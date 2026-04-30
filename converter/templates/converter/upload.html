@@ -467,6 +467,23 @@
         .result-card.good .result-thresholds { color: #1b5e20; }
         .result-card.minimum .result-thresholds { color: #7c6f00; }
         .result-card.unfit .result-thresholds { color: #8b1a1a; }
+
+        .page-footer {
+            text-align: center;
+            padding: 15px 20px;
+            font-size: 0.82em;
+            color: #999;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .page-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .page-footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -687,6 +704,11 @@
             <div class="checker-results" id="checkerResults"></div>
             <div class="error-message" id="checkerErrorMessage"></div>
         </div>
+
+        <footer class="page-footer">
+            Hochgeladene Dateien werden nach der Konvertierung automatisch vom Server gelöscht. &nbsp;|&nbsp;
+            <a href="/impressum/">Impressum</a>
+        </footer>
     </div>
 
     <script>

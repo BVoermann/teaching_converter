@@ -10,6 +10,10 @@ import threading
 import tempfile
 import shutil
 
+def impressum(request):
+    return render(request, 'converter/impressum.html')
+
+
 # Global dictionary to track conversion progress
 conversion_progress = {}
 h5p_conversion_progress = {}
