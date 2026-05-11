@@ -14,6 +14,10 @@ def impressum(request):
     return render(request, 'converter/impressum.html')
 
 
+def datenschutz(request):
+    return render(request, 'converter/datenschutz.html')
+
+
 # Global dictionary to track conversion progress
 conversion_progress = {}
 h5p_conversion_progress = {}

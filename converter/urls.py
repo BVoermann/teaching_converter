@@ -17,4 +17,5 @@ urlpatterns = [
     path('check-image/', views.check_image, name='check_image'),
     path('cleanup-session/', views.cleanup_session, name='cleanup_session'),
     path('impressum/', views.impressum, name='impressum'),
+    path('datenschutz/', views.datenschutz, name='datenschutz'),
 ]
