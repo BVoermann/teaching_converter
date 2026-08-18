@@ -2,13 +2,18 @@ from django.shortcuts import render
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.core.files.storage import FileSystemStorage
 from django.views.decorators.csrf import csrf_exempt
-from .utils import pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type, pdf_to_images_zip
+from django.conf import settings
+from .utils import (
+    pdf_to_pptx, images_to_h5p, pptx_to_images, compress_files, get_file_type, pdf_to_images_zip,
+    apply_ai_label_to_image, apply_ai_label_to_video, get_video_dimensions
+)
 from PIL import Image
 import os
 import uuid
 import threading
 import tempfile
 import shutil
+import mimetypes
 
 def impressum(request):
     return render(request, 'converter/impressum.html')
@@ -23,6 +28,24 @@ conversion_progress = {}
 h5p_conversion_progress = {}
 compress_conversion_progress = {}
 pdf_images_progress = {}
+ai_label_progress = {}
+
+
+# AI label overlay assets and limits
+AI_LABEL_SIZE_LIMITS = {
+    'image': 30 * 1024 * 1024,        # 30 MB
+    'video': 1 * 1024 * 1024 * 1024,  # 1 GB
+}
+
+AI_LABEL_SIZE_LABELS = {
+    'image': '30 MB',
+    'video': '1 GB',
+}
+
+AI_LABEL_FILES = {
+    'generated': os.path.join(settings.BASE_DIR, 'converter', 'static', 'converter', 'ai_labels', 'ai_generated.png'),
+    'modified': os.path.join(settings.BASE_DIR, 'converter', 'static', 'converter', 'ai_labels', 'ai_modified.png'),
+}
 
 
 # File size limits in bytes
@@ -657,6 +680,18 @@ def _cleanup_task(task_id):
                     pass
         del pdf_images_progress[task_id]
 
+    # AI Label
+    if task_id in ai_label_progress:
+        data = ai_label_progress[task_id]
+        for key in ('output_path', 'input_path'):
+            path = data.get(key)
+            if path and os.path.exists(path):
+                try:
+                    os.remove(path)
+                except OSError:
+                    pass
+        del ai_label_progress[task_id]
+
 
 @csrf_exempt
 def cleanup_session(request):
@@ -742,3 +777,162 @@ def check_image(request):
         })
 
     return render(request, 'converter/upload.html')
+
+
+def _clamp_label_box(x_frac, y_frac, w_frac, h_frac):
+    """Keep the label's relative position/size sane and fully inside the media."""
+    w_frac = max(0.02, min(1.0, w_frac))
+    h_frac = max(0.02, min(1.0, h_frac))
+    x_frac = max(0.0, min(1.0 - w_frac, x_frac))
+    y_frac = max(0.0, min(1.0 - h_frac, y_frac))
+    return x_frac, y_frac, w_frac, h_frac
+
+
+def upload_ai_label(request):
+    if request.method == 'POST' and request.FILES.get('ai_label_file'):
+        upload = request.FILES['ai_label_file']
+        label_choice = request.POST.get('label_choice')
+
+        if label_choice not in AI_LABEL_FILES:
+            return JsonResponse({'error': 'Ungültiges Label ausgewählt.'}, status=400)
+
+        media_type = get_file_type(upload.name)
+        if media_type not in ('image', 'video'):
+            ct = upload.content_type or ''
+            if ct.startswith('image/'):
+                media_type = 'image'
+            elif ct.startswith('video/'):
+                media_type = 'video'
+        if media_type not in ('image', 'video'):
+            return JsonResponse({'error': 'Nur Bild- oder Videodateien werden unterstützt.'}, status=400)
+
+        limit = AI_LABEL_SIZE_LIMITS[media_type]
+        if upload.size > limit:
+            return JsonResponse({
+                'error': f'"{upload.name}" ist zu groß ({upload.size // (1024 * 1024)} MB). '
+                         f'Maximale Größe: {AI_LABEL_SIZE_LABELS[media_type]}.'
+            }, status=400)
+
+        try:
+            x_frac = float(request.POST.get('x_frac', 0))
+            y_frac = float(request.POST.get('y_frac', 0))
+            w_frac = float(request.POST.get('w_frac', 0.25))
+            h_frac = float(request.POST.get('h_frac', 0.1))
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'Ungültige Positionsangaben.'}, status=400)
+
+        x_frac, y_frac, w_frac, h_frac = _clamp_label_box(x_frac, y_frac, w_frac, h_frac)
+
+        task_id = str(uuid.uuid4())
+        _track_task_in_session(request, task_id)
+        ai_label_progress[task_id] = {'status': 'processing', 'progress': 0, 'message': 'Datei wird hochgeladen...'}
+
+        fs = FileSystemStorage()
+        input_filename = fs.save(upload.name, upload)
+        input_path = fs.path(input_filename)
+        label_path = AI_LABEL_FILES[label_choice]
+        name, ext = os.path.splitext(input_filename)
+
+        def process_task():
+            try:
+                if media_type == 'image':
+                    img = Image.open(input_path)
+                    width, height = img.size
+                    img.close()
+
+                    out_ext = ext.lower() if ext.lower() in ('.jpg', '.jpeg') else '.png'
+                    output_filename = f'{name}_ai_label{out_ext}'
+                    output_path = fs.path(output_filename)
+
+                    ai_label_progress[task_id] = {'status': 'processing', 'progress': 50, 'message': 'Label wird eingefügt...'}
+                    apply_ai_label_to_image(
+                        input_path, label_path, output_path,
+                        x_frac * width, y_frac * height, w_frac * width, h_frac * height
+                    )
+                else:
+                    width, height = get_video_dimensions(input_path)
+
+                    output_filename = f'{name}_ai_label.mp4'
+                    output_path = fs.path(output_filename)
+
+                    def video_progress(percent):
+                        ai_label_progress[task_id] = {
+                            'status': 'processing',
+                            'progress': percent,
+                            'message': 'Label wird in das Video eingefügt...'
+                        }
+
+                    ai_label_progress[task_id] = {'status': 'processing', 'progress': 0, 'message': 'Label wird in das Video eingefügt...'}
+                    apply_ai_label_to_video(
+                        input_path, label_path, output_path,
+                        x_frac * width, y_frac * height, w_frac * width, h_frac * height,
+                        progress_callback=video_progress
+                    )
+
+                ai_label_progress[task_id] = {
+                    'status': 'complete',
+                    'progress': 100,
+                    'message': 'Label wurde hinzugefügt!',
+                    'output_filename': output_filename,
+                    'output_path': output_path,
+                    'input_path': input_path,
+                }
+
+            except Exception as e:
+                if os.path.exists(input_path):
+                    try:
+                        os.remove(input_path)
+                    except OSError:
+                        pass
+                ai_label_progress[task_id] = {
+                    'status': 'error',
+                    'progress': 0,
+                    'message': f'Fehler: {str(e)}'
+                }
+
+        threading.Thread(target=process_task, daemon=True).start()
+        return JsonResponse({'task_id': task_id})
+
+    return render(request, 'converter/upload.html')
+
+
+def check_ai_label_progress(request, task_id):
+    if task_id in ai_label_progress:
+        return JsonResponse(ai_label_progress[task_id])
+    return JsonResponse({'status': 'not_found', 'message': 'Aufgabe nicht gefunden'}, status=404)
+
+
+def download_ai_label_file(request, task_id):
+    if task_id in ai_label_progress:
+        progress_data = ai_label_progress[task_id]
+        if progress_data['status'] == 'complete':
+            output_path = progress_data['output_path']
+            output_filename = progress_data['output_filename']
+
+            if os.path.exists(output_path):
+                content_type, _ = mimetypes.guess_type(output_filename)
+                response = FileResponse(
+                    open(output_path, 'rb'),
+                    content_type=content_type or 'application/octet-stream'
+                )
+                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+
+                def cleanup():
+                    import time
+                    time.sleep(5)
+                    try:
+                        if os.path.exists(output_path):
+                            os.remove(output_path)
+                        input_path = progress_data.get('input_path')
+                        if input_path and os.path.exists(input_path):
+                            os.remove(input_path)
+                        if task_id in ai_label_progress:
+                            del ai_label_progress[task_id]
+                    except:
+                        pass
+
+                threading.Thread(target=cleanup).start()
+
+                return response
+
+    return HttpResponse('Datei nicht gefunden', status=404)

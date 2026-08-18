@@ -495,6 +495,131 @@ def compress_pdf(input_path, output_path):
     return output_path
 
 
+def get_video_dimensions(video_path):
+    """Return (width, height) of the first video stream using ffprobe."""
+    result = subprocess.run(
+        [
+            'ffprobe', '-v', 'error', '-select_streams', 'v:0',
+            '-show_entries', 'stream=width,height',
+            '-of', 'csv=s=x:p=0', video_path
+        ],
+        capture_output=True, text=True, timeout=30
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        raise Exception(f"Videoabmessungen konnten nicht ermittelt werden: {result.stderr}")
+    width_str, height_str = result.stdout.strip().split('x')
+    return int(width_str), int(height_str)
+
+
+def apply_ai_label_to_image(image_path, label_path, output_path, x, y, width, height):
+    """
+    Composite the label image onto the base image at pixel box (x, y, width, height).
+
+    Args:
+        image_path: Path to the uploaded base image
+        label_path: Path to the AI label PNG (with transparency)
+        output_path: Path where the labelled image will be saved
+        x, y, width, height: Pixel position/size of the label on the base image
+    """
+    base = Image.open(image_path).convert('RGBA')
+
+    width = max(1, int(round(width)))
+    height = max(1, int(round(height)))
+    label = Image.open(label_path).convert('RGBA').resize((width, height), Image.LANCZOS)
+
+    base.paste(label, (int(round(x)), int(round(y))), label)
+
+    if os.path.splitext(output_path)[1].lower() in ('.jpg', '.jpeg'):
+        base.convert('RGB').save(output_path, 'JPEG', quality=92)
+    else:
+        base.save(output_path, 'PNG')
+
+    return output_path
+
+
+def get_video_duration(video_path):
+    """Return the video's duration in seconds, or None if it can't be determined."""
+    result = subprocess.run(
+        [
+            'ffprobe', '-v', 'error', '-show_entries', 'format=duration',
+            '-of', 'default=noprint_wrappers=1:nokey=1', video_path
+        ],
+        capture_output=True, text=True, timeout=30
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    try:
+        return float(result.stdout.strip())
+    except ValueError:
+        return None
+
+
+def apply_ai_label_to_video(video_path, label_path, output_path, x, y, width, height, progress_callback=None):
+    """
+    Overlay the label image onto every frame of the video at pixel box (x, y, width, height).
+
+    Args:
+        video_path: Path to the uploaded base video
+        label_path: Path to the AI label PNG (with transparency)
+        output_path: Path where the labelled video (.mp4) will be saved
+        x, y, width, height: Pixel position/size of the label on the base video
+        progress_callback: Optional callable(percent) invoked as the re-encode progresses
+    """
+    width = max(2, int(round(width)))
+    height = max(2, int(round(height)))
+    # libx264 requires even dimensions
+    if width % 2:
+        width += 1
+    if height % 2:
+        height += 1
+
+    filter_complex = (
+        f"[1:v]scale={width}:{height}[lbl];"
+        f"[0:v][lbl]overlay={int(round(x))}:{int(round(y))}:format=auto[outv]"
+    )
+
+    duration = get_video_duration(video_path)
+
+    with tempfile.TemporaryFile(mode='w+') as stderr_file:
+        process = subprocess.Popen(
+            [
+                'ffmpeg', '-i', video_path, '-i', label_path,
+                '-filter_complex', filter_complex,
+                '-map', '[outv]', '-map', '0:a?',
+                '-c:v', 'libx264', '-crf', '20', '-preset', 'medium',
+                '-c:a', 'aac', '-b:a', '192k',
+                '-movflags', '+faststart',
+                '-progress', 'pipe:1', '-nostats',
+                '-y', output_path
+            ],
+            stdout=subprocess.PIPE, stderr=stderr_file, text=True
+        )
+
+        # Drain stdout so the ffmpeg progress pipe never blocks, converting
+        # each "out_time_ms=" line into a percentage against the known duration.
+        for line in process.stdout:
+            if progress_callback and duration:
+                line = line.strip()
+                if line.startswith('out_time_ms='):
+                    try:
+                        out_time_seconds = int(line.split('=', 1)[1]) / 1_000_000
+                        percent = max(0.0, min(99.0, (out_time_seconds / duration) * 100))
+                        progress_callback(percent)
+                    except (ValueError, ZeroDivisionError):
+                        pass
+
+        process.wait(timeout=1800)
+
+        if process.returncode != 0:
+            stderr_file.seek(0)
+            raise Exception(f"FFmpeg-Label-Overlay fehlgeschlagen: {stderr_file.read()}")
+
+    if progress_callback:
+        progress_callback(100)
+
+    return output_path
+
+
 def compress_files(file_paths, output_zip_path, progress_callback=None):
     total = len(file_paths)
 

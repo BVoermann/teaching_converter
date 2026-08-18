@@ -5,7 +5,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dateikonverter</title>
-    <link rel="icon" type="image/png" href="{% static 'converter/favicon.png' %}">
+    <link rel="icon" type="image/x-icon" href="{% static 'converter/favicons/favicon.ico' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'converter/favicons/favicon-16x16.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'converter/favicons/favicon-32x32.png' %}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'converter/favicons/apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{% static 'converter/favicons/android-chrome-192x192.png' %}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{% static 'converter/favicons/android-chrome-512x512.png' %}">
     <style>
         * {
             margin: 0;
@@ -27,10 +32,12 @@
             background: white;
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 700px;
+            max-width: 1500px;
             width: 100%;
             overflow: hidden;
             animation: slideIn 0.5s ease;
+            display: flex;
+            align-items: stretch;
         }
 
         @keyframes slideIn {
@@ -44,22 +51,88 @@
             }
         }
 
-        .tabs {
-            display: flex;
+        .sidebar {
+            flex-shrink: 0;
+            width: 270px;
             background: #f8f9fa;
+            border-right: 2px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s ease;
+            overflow: hidden;
+        }
+
+        .sidebar.collapsed {
+            width: 68px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 12px 18px 20px;
             border-bottom: 2px solid #e9ecef;
         }
 
-        .tab {
-            flex: 1;
-            padding: 20px;
-            text-align: center;
+        .sidebar-title {
+            font-weight: 700;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed .sidebar-title {
+            display: none;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
             cursor: pointer;
-            transition: all 0.3s ease;
+            color: #667eea;
+            font-size: 1.2em;
+            padding: 6px 10px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            transition: background 0.2s ease, transform 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: #eef0ff;
+        }
+
+        .sidebar.collapsed .sidebar-toggle {
+            transform: rotate(180deg);
+        }
+
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
             font-weight: 600;
             color: #666;
-            border-bottom: 3px solid transparent;
-            position: relative;
+            border-left: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-icon {
+            font-size: 1.2em;
+            flex-shrink: 0;
+            width: 1.2em;
+            text-align: center;
+        }
+
+        .sidebar.collapsed .tab-label {
+            display: none;
         }
 
         .tab:hover {
@@ -70,11 +143,19 @@
         .tab.active {
             background: #fff;
             color: #667eea;
-            border-bottom-color: #667eea;
+            border-left-color: #667eea;
+        }
+
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            overflow-y: auto;
         }
 
         .tab-content {
             display: none;
+            max-width: 780px;
+            margin: 0 auto;
             padding: 50px 40px;
         }
 
@@ -470,6 +551,119 @@
         .result-card.minimum .result-thresholds { color: #7c6f00; }
         .result-card.unfit .result-thresholds { color: #8b1a1a; }
 
+        .ai-label-editor {
+            margin-top: 30px;
+        }
+
+        .ai-label-picker {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .ai-label-choice {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            background:
+                linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0),
+                linear-gradient(45deg, #f0f0f0 25%, #fafafa 25%, #fafafa 75%, #f0f0f0 75%, #f0f0f0);
+            background-size: 16px 16px;
+            background-position: 0 0, 8px 8px;
+            transition: all 0.3s ease;
+        }
+
+        .ai-label-choice img {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        .ai-label-choice:hover {
+            border-color: #667eea;
+        }
+
+        .ai-label-choice.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+        }
+
+        .ai-label-preview-wrapper {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            line-height: 0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+            user-select: none;
+        }
+
+        .ai-label-preview-wrapper img,
+        .ai-label-preview-wrapper video {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-width: 100%;
+        }
+
+        .ai-label-overlay {
+            position: absolute;
+            touch-action: none;
+            cursor: move;
+            border: 2px dashed #667eea;
+            box-sizing: border-box;
+        }
+
+        .ai-label-overlay img {
+            width: 100%;
+            height: 100%;
+            display: block;
+            pointer-events: none;
+        }
+
+        .ai-label-resize-handle {
+            position: absolute;
+            right: -8px;
+            bottom: -8px;
+            width: 16px;
+            height: 16px;
+            background: #667eea;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            touch-action: none;
+        }
+
+        .ai-label-hint {
+            text-align: center;
+            color: #999;
+            font-size: 0.85em;
+            margin-top: 8px;
+        }
+
+        .ai-label-video-scrub {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .ai-label-video-scrub input[type="range"] {
+            flex: 1;
+            accent-color: #667eea;
+            cursor: pointer;
+        }
+
+        .ai-label-scrub-time {
+            color: #666;
+            font-size: 0.85em;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
         .page-footer {
             text-align: center;
             padding: 15px 20px;
@@ -490,23 +684,34 @@
 </head>
 <body>
     <div class="container">
-        <div class="tabs">
-            <div class="tab active" data-tab="pdf-to-pptx">
-                <span>📄 PDF zu PowerPoint</span>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-title">Werkzeuge</span>
+                <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Seitenleiste ein-/ausklappen" aria-expanded="true">◀</button>
             </div>
-            <div class="tab" data-tab="images-to-h5p">
-                <span>🖼️ Bilder oder Präsentationen zu H5P</span>
-            </div>
-            <div class="tab" data-tab="compress-files">
-                <span>📦 Dateien komprimieren</span>
-            </div>
-            <div class="tab" data-tab="pdf-to-images">
-                <span>🖼️ PDF zu Bildern</span>
-            </div>
-            <div class="tab" data-tab="image-checker">
-                <span>🔍 Bildprüfer</span>
+            <div class="tabs">
+                <div class="tab active" data-tab="pdf-to-pptx" title="PDF zu PowerPoint">
+                    <span class="tab-icon">📄</span><span class="tab-label">PDF zu PowerPoint</span>
+                </div>
+                <div class="tab" data-tab="images-to-h5p" title="Bilder oder Präsentationen zu H5P">
+                    <span class="tab-icon">🖼️</span><span class="tab-label">Bilder oder Präsentationen zu H5P</span>
+                </div>
+                <div class="tab" data-tab="compress-files" title="Dateien komprimieren">
+                    <span class="tab-icon">📦</span><span class="tab-label">Dateien komprimieren</span>
+                </div>
+                <div class="tab" data-tab="pdf-to-images" title="PDF zu Bildern">
+                    <span class="tab-icon">🖼️</span><span class="tab-label">PDF zu Bildern</span>
+                </div>
+                <div class="tab" data-tab="image-checker" title="Bildprüfer">
+                    <span class="tab-icon">🔍</span><span class="tab-label">Bildprüfer</span>
+                </div>
+                <div class="tab" data-tab="ai-label" title="KI-Label">
+                    <span class="tab-icon">🏷️</span><span class="tab-label">KI-Label</span>
+                </div>
             </div>
         </div>
+
+        <div class="main-content">
 
         <!-- PDF to PPTX Tab Content -->
         <div class="tab-content active" id="pdf-to-pptx">
@@ -707,13 +912,84 @@
             <div class="error-message" id="checkerErrorMessage"></div>
         </div>
 
+        <!-- AI Label Tab Content -->
+        <div class="tab-content" id="ai-label">
+            <h1>KI-Label</h1>
+            <p class="subtitle">Bild oder Video hochladen und ein KI-Label platzieren</p>
+
+            <form id="aiLabelUploadForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="upload-area" id="aiLabelUploadArea">
+                    <div class="upload-icon">🏷️</div>
+                    <div class="upload-text">Klicken zum Hochladen oder Datei hierher ziehen</div>
+                    <div class="upload-hint">Bilder (max. 30 MB) oder Videos (max. 1 GB)</div>
+                    <input type="file" name="ai_label_file" id="aiLabelFile" accept="image/*,video/*">
+                </div>
+                <div class="file-list" id="aiLabelFileName"></div>
+
+                <div class="ai-label-editor" id="aiLabelEditor" style="display: none;">
+                    <label class="option-label">Label auswählen:</label>
+                    <div class="ai-label-picker">
+                        <div class="ai-label-choice" id="aiLabelChoiceGenerated" data-label="generated">
+                            <img src="{% static 'converter/ai_labels/ai_generated.png' %}" alt="KI-generiert Label">
+                        </div>
+                        <div class="ai-label-choice" id="aiLabelChoiceModified" data-label="modified">
+                            <img src="{% static 'converter/ai_labels/ai_modified.png' %}" alt="KI-bearbeitet Label">
+                        </div>
+                    </div>
+
+                    <label class="option-label">Label platzieren:</label>
+                    <div class="ai-label-preview-wrapper" id="aiLabelPreviewWrapper">
+                        <img id="aiLabelPreviewImage" style="display: none;">
+                        <video id="aiLabelPreviewVideo" style="display: none;" muted playsinline preload="metadata"></video>
+                        <div class="ai-label-overlay" id="aiLabelOverlay" style="display: none;">
+                            <img id="aiLabelOverlayImg" draggable="false" alt="Label">
+                            <div class="ai-label-resize-handle" id="aiLabelResizeHandle"></div>
+                        </div>
+                    </div>
+                    <div class="ai-label-video-scrub" id="aiLabelVideoScrub" style="display: none;">
+                        <input type="range" id="aiLabelScrubRange" min="0" max="100" step="0.01" value="0">
+                        <span class="ai-label-scrub-time" id="aiLabelScrubTime">0:00 / 0:00</span>
+                    </div>
+                    <div class="ai-label-hint">Ziehen zum Verschieben, am runden Punkt zum Skalieren</div>
+
+                    <button type="button" class="convert-btn" id="aiLabelApplyBtn" style="display: none;">Label anwenden</button>
+                </div>
+            </form>
+
+            <div class="progress-container" id="aiLabelProgressContainer">
+                <div class="progress-label">
+                    <span id="aiLabelProgressLabel">Verarbeitung...</span>
+                    <span id="aiLabelProgressPercent">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="aiLabelProgressBar"></div>
+                </div>
+                <div class="status-message" id="aiLabelStatusMessage"></div>
+            </div>
+
+            <div class="success-icon" id="aiLabelSuccessIcon">✓</div>
+            <button class="download-btn" id="aiLabelDownloadBtn">Datei mit Label herunterladen</button>
+            <div class="error-message" id="aiLabelErrorMessage"></div>
+        </div>
+
         <footer class="page-footer">
             <a href="/impressum/">Impressum</a> &nbsp;|&nbsp;
             <a href="/datenschutz/">Datenschutz</a>
         </footer>
+        </div>
     </div>
 
     <script>
+        // Sidebar collapse/expand (open by default on every page load)
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebarToggle');
+
+        sidebarToggle.addEventListener('click', () => {
+            const collapsed = sidebar.classList.toggle('collapsed');
+            sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+        });
+
         // Tab switching
         const tabs = document.querySelectorAll('.tab');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1730,6 +2006,410 @@
             checkerResults.innerHTML = html;
             checkerResults.classList.add('visible');
         }
+        // ===== AI Label Tab =====
+        const aiLabelUploadArea = document.getElementById('aiLabelUploadArea');
+        const aiLabelFile = document.getElementById('aiLabelFile');
+        const aiLabelFileName = document.getElementById('aiLabelFileName');
+        const aiLabelEditor = document.getElementById('aiLabelEditor');
+        const aiLabelPreviewWrapper = document.getElementById('aiLabelPreviewWrapper');
+        const aiLabelPreviewImage = document.getElementById('aiLabelPreviewImage');
+        const aiLabelPreviewVideo = document.getElementById('aiLabelPreviewVideo');
+        const aiLabelVideoScrub = document.getElementById('aiLabelVideoScrub');
+        const aiLabelScrubRange = document.getElementById('aiLabelScrubRange');
+        const aiLabelScrubTime = document.getElementById('aiLabelScrubTime');
+        const aiLabelOverlay = document.getElementById('aiLabelOverlay');
+        const aiLabelOverlayImg = document.getElementById('aiLabelOverlayImg');
+        const aiLabelResizeHandle = document.getElementById('aiLabelResizeHandle');
+        const aiLabelChoiceGenerated = document.getElementById('aiLabelChoiceGenerated');
+        const aiLabelChoiceModified = document.getElementById('aiLabelChoiceModified');
+        const aiLabelApplyBtn = document.getElementById('aiLabelApplyBtn');
+        const aiLabelProgressContainer = document.getElementById('aiLabelProgressContainer');
+        const aiLabelProgressBar = document.getElementById('aiLabelProgressBar');
+        const aiLabelProgressPercent = document.getElementById('aiLabelProgressPercent');
+        const aiLabelProgressLabel = document.getElementById('aiLabelProgressLabel');
+        const aiLabelStatusMessage = document.getElementById('aiLabelStatusMessage');
+        const aiLabelDownloadBtn = document.getElementById('aiLabelDownloadBtn');
+        const aiLabelErrorMessage = document.getElementById('aiLabelErrorMessage');
+        const aiLabelSuccessIcon = document.getElementById('aiLabelSuccessIcon');
+
+        const AI_LABEL_SIZE_LIMITS = {
+            image: { max: 30 * 1024 * 1024, label: '30 MB' },
+            video: { max: 1 * 1024 * 1024 * 1024, label: '1 GB' },
+        };
+
+        let selectedAiLabelFile = null;
+        let selectedAiLabelChoice = null;
+        let aiLabelAspectRatio = 1;
+
+        function getAiLabelMediaCategory(file) {
+            if (file.type.startsWith('image/')) return 'image';
+            if (file.type.startsWith('video/')) return 'video';
+            return null;
+        }
+
+        function checkAiLabelFileSize(file) {
+            const category = getAiLabelMediaCategory(file);
+            if (!category) return 'Bitte wählen Sie eine Bild- oder Videodatei aus.';
+            const limit = AI_LABEL_SIZE_LIMITS[category];
+            if (file.size > limit.max) {
+                return `"${file.name}" ist zu groß (${formatFileSize(file.size)}). Maximale Größe: ${limit.label}.`;
+            }
+            return null;
+        }
+
+        aiLabelUploadArea.addEventListener('click', () => aiLabelFile.click());
+
+        aiLabelUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            aiLabelUploadArea.classList.add('dragover');
+        });
+
+        aiLabelUploadArea.addEventListener('dragleave', () => {
+            aiLabelUploadArea.classList.remove('dragover');
+        });
+
+        aiLabelUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            aiLabelUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleAiLabelFile(files[0]);
+            }
+        });
+
+        aiLabelFile.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleAiLabelFile(e.target.files[0]);
+            }
+        });
+
+        function handleAiLabelFile(file) {
+            const sizeError = checkAiLabelFileSize(file);
+            if (sizeError) {
+                aiLabelErrorMessage.textContent = sizeError;
+                aiLabelErrorMessage.style.display = 'block';
+                aiLabelFile.value = '';
+                return;
+            }
+            aiLabelErrorMessage.style.display = 'none';
+            aiLabelDownloadBtn.style.display = 'none';
+            aiLabelSuccessIcon.style.display = 'none';
+            aiLabelProgressContainer.style.display = 'none';
+
+            selectedAiLabelFile = file;
+            selectedAiLabelChoice = null;
+            aiLabelChoiceGenerated.classList.remove('selected');
+            aiLabelChoiceModified.classList.remove('selected');
+            aiLabelOverlay.style.display = 'none';
+            aiLabelApplyBtn.style.display = 'none';
+
+            aiLabelFileName.innerHTML = `<div class="file-item">📎 ${file.name} (${formatFileSize(file.size)})</div>`;
+            aiLabelFileName.style.display = 'block';
+
+            const objectUrl = URL.createObjectURL(file);
+            const category = getAiLabelMediaCategory(file);
+
+            if (category === 'image') {
+                aiLabelPreviewVideo.pause();
+                aiLabelPreviewVideo.removeAttribute('src');
+                aiLabelPreviewVideo.style.display = 'none';
+                aiLabelVideoScrub.style.display = 'none';
+                aiLabelPreviewImage.style.display = 'block';
+                aiLabelPreviewImage.onload = () => {
+                    aiLabelEditor.style.display = 'block';
+                };
+                aiLabelPreviewImage.src = objectUrl;
+            } else {
+                aiLabelPreviewImage.style.display = 'none';
+                aiLabelPreviewImage.removeAttribute('src');
+                aiLabelPreviewVideo.style.display = 'block';
+                aiLabelPreviewVideo.onloadedmetadata = () => {
+                    // Never autoplay: land on frame 0, paused, and let the user
+                    // scrub through the video to check the label placement.
+                    aiLabelPreviewVideo.pause();
+                    aiLabelPreviewVideo.currentTime = 0;
+                    aiLabelScrubRange.max = aiLabelPreviewVideo.duration || 0;
+                    aiLabelScrubRange.value = 0;
+                    updateAiLabelScrubTime();
+                    aiLabelVideoScrub.style.display = 'flex';
+                    aiLabelEditor.style.display = 'block';
+                };
+                aiLabelPreviewVideo.src = objectUrl;
+            }
+        }
+
+        function formatAiLabelTime(seconds) {
+            if (!isFinite(seconds) || seconds < 0) seconds = 0;
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function updateAiLabelScrubTime() {
+            aiLabelScrubTime.textContent =
+                `${formatAiLabelTime(aiLabelPreviewVideo.currentTime)} / ${formatAiLabelTime(aiLabelPreviewVideo.duration)}`;
+        }
+
+        aiLabelScrubRange.addEventListener('input', () => {
+            aiLabelPreviewVideo.currentTime = parseFloat(aiLabelScrubRange.value);
+        });
+
+        aiLabelPreviewVideo.addEventListener('timeupdate', updateAiLabelScrubTime);
+
+        function selectAiLabelChoice(choice) {
+            selectedAiLabelChoice = choice;
+            aiLabelChoiceGenerated.classList.toggle('selected', choice === 'generated');
+            aiLabelChoiceModified.classList.toggle('selected', choice === 'modified');
+
+            const chosenImg = choice === 'generated'
+                ? aiLabelChoiceGenerated.querySelector('img')
+                : aiLabelChoiceModified.querySelector('img');
+
+            aiLabelOverlayImg.onload = () => {
+                aiLabelAspectRatio = aiLabelOverlayImg.naturalWidth / aiLabelOverlayImg.naturalHeight;
+                initAiLabelOverlayPosition();
+            };
+            aiLabelOverlayImg.src = chosenImg.src;
+
+            aiLabelOverlay.style.display = 'block';
+            aiLabelApplyBtn.style.display = 'block';
+        }
+
+        aiLabelChoiceGenerated.addEventListener('click', () => selectAiLabelChoice('generated'));
+        aiLabelChoiceModified.addEventListener('click', () => selectAiLabelChoice('modified'));
+
+        function initAiLabelOverlayPosition() {
+            const wrapperWidth = aiLabelPreviewWrapper.clientWidth;
+            const wrapperHeight = aiLabelPreviewWrapper.clientHeight;
+
+            let width = wrapperWidth * 0.28;
+            let height = width / aiLabelAspectRatio;
+            if (height > wrapperHeight * 0.6) {
+                height = wrapperHeight * 0.6;
+                width = height * aiLabelAspectRatio;
+            }
+
+            const margin = wrapperWidth * 0.03;
+            const left = Math.max(0, wrapperWidth - width - margin);
+            const top = Math.max(0, wrapperHeight - height - margin);
+
+            aiLabelOverlay.style.width = width + 'px';
+            aiLabelOverlay.style.height = height + 'px';
+            aiLabelOverlay.style.left = left + 'px';
+            aiLabelOverlay.style.top = top + 'px';
+        }
+
+        // Dragging the label to reposition it
+        let aiLabelDrag = null;
+
+        aiLabelOverlay.addEventListener('pointerdown', (e) => {
+            if (e.target === aiLabelResizeHandle) return;
+            aiLabelOverlay.setPointerCapture(e.pointerId);
+            aiLabelDrag = {
+                startX: e.clientX,
+                startY: e.clientY,
+                startLeft: aiLabelOverlay.offsetLeft,
+                startTop: aiLabelOverlay.offsetTop,
+            };
+        });
+
+        aiLabelOverlay.addEventListener('pointermove', (e) => {
+            if (!aiLabelDrag) return;
+            const wrapperWidth = aiLabelPreviewWrapper.clientWidth;
+            const wrapperHeight = aiLabelPreviewWrapper.clientHeight;
+            const overlayWidth = aiLabelOverlay.offsetWidth;
+            const overlayHeight = aiLabelOverlay.offsetHeight;
+
+            let newLeft = aiLabelDrag.startLeft + (e.clientX - aiLabelDrag.startX);
+            let newTop = aiLabelDrag.startTop + (e.clientY - aiLabelDrag.startY);
+
+            newLeft = Math.max(0, Math.min(wrapperWidth - overlayWidth, newLeft));
+            newTop = Math.max(0, Math.min(wrapperHeight - overlayHeight, newTop));
+
+            aiLabelOverlay.style.left = newLeft + 'px';
+            aiLabelOverlay.style.top = newTop + 'px';
+        });
+
+        aiLabelOverlay.addEventListener('pointerup', (e) => {
+            if (aiLabelDrag) {
+                aiLabelOverlay.releasePointerCapture(e.pointerId);
+            }
+            aiLabelDrag = null;
+        });
+
+        // Resizing the label (maintains aspect ratio)
+        let aiLabelResize = null;
+
+        aiLabelResizeHandle.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            aiLabelResizeHandle.setPointerCapture(e.pointerId);
+            aiLabelResize = {
+                startX: e.clientX,
+                startWidth: aiLabelOverlay.offsetWidth,
+                left: aiLabelOverlay.offsetLeft,
+                top: aiLabelOverlay.offsetTop,
+            };
+        });
+
+        aiLabelResizeHandle.addEventListener('pointermove', (e) => {
+            if (!aiLabelResize) return;
+            const wrapperWidth = aiLabelPreviewWrapper.clientWidth;
+            const wrapperHeight = aiLabelPreviewWrapper.clientHeight;
+
+            let newWidth = aiLabelResize.startWidth + (e.clientX - aiLabelResize.startX);
+            const maxWidthByBounds = Math.min(wrapperWidth - aiLabelResize.left, (wrapperHeight - aiLabelResize.top) * aiLabelAspectRatio);
+            const minWidth = Math.max(20, wrapperWidth * 0.05);
+
+            newWidth = Math.max(minWidth, Math.min(maxWidthByBounds, newWidth));
+            const newHeight = newWidth / aiLabelAspectRatio;
+
+            aiLabelOverlay.style.width = newWidth + 'px';
+            aiLabelOverlay.style.height = newHeight + 'px';
+        });
+
+        aiLabelResizeHandle.addEventListener('pointerup', (e) => {
+            if (aiLabelResize) {
+                aiLabelResizeHandle.releasePointerCapture(e.pointerId);
+            }
+            aiLabelResize = null;
+        });
+
+        aiLabelApplyBtn.addEventListener('click', () => {
+            if (!selectedAiLabelFile || !selectedAiLabelChoice) {
+                aiLabelErrorMessage.textContent = 'Bitte wählen Sie eine Datei und ein Label aus.';
+                aiLabelErrorMessage.style.display = 'block';
+                return;
+            }
+
+            const wrapperWidth = aiLabelPreviewWrapper.clientWidth;
+            const wrapperHeight = aiLabelPreviewWrapper.clientHeight;
+            const xFrac = aiLabelOverlay.offsetLeft / wrapperWidth;
+            const yFrac = aiLabelOverlay.offsetTop / wrapperHeight;
+            const wFrac = aiLabelOverlay.offsetWidth / wrapperWidth;
+            const hFrac = aiLabelOverlay.offsetHeight / wrapperHeight;
+
+            aiLabelApplyBtn.disabled = true;
+            aiLabelErrorMessage.style.display = 'none';
+            aiLabelDownloadBtn.style.display = 'none';
+            aiLabelSuccessIcon.style.display = 'none';
+
+            aiLabelProgressContainer.style.display = 'block';
+            aiLabelProgressBar.style.width = '0%';
+            aiLabelProgressPercent.textContent = '0%';
+            aiLabelProgressLabel.textContent = 'Hochladen...';
+            aiLabelStatusMessage.textContent = '';
+
+            const formData = new FormData();
+            formData.append('ai_label_file', selectedAiLabelFile);
+            formData.append('label_choice', selectedAiLabelChoice);
+            formData.append('x_frac', xFrac);
+            formData.append('y_frac', yFrac);
+            formData.append('w_frac', wFrac);
+            formData.append('h_frac', hFrac);
+            formData.append('csrfmiddlewaretoken', document.querySelector('#aiLabelUploadForm input[name="csrfmiddlewaretoken"]').value);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    updateAiLabelProgress(percent, 'Hochladen...', `${formatFileSize(e.loaded)} / ${formatFileSize(e.total)}`);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        showAiLabelError(data.error);
+                        aiLabelApplyBtn.disabled = false;
+                        return;
+                    }
+                    updateAiLabelProgress(0, 'Verarbeitung...', 'Label wird eingefügt...');
+                    pollAiLabelProgress(data.task_id);
+                } else {
+                    showAiLabelError('Upload fehlgeschlagen');
+                    aiLabelApplyBtn.disabled = false;
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                showAiLabelError('Upload fehlgeschlagen');
+                aiLabelApplyBtn.disabled = false;
+            });
+
+            xhr.open('POST', '/ai-label/');
+            xhr.send(formData);
+        });
+
+        async function pollAiLabelProgress(taskId) {
+            const pollInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/ai-label-progress/${taskId}/`);
+                    const data = await response.json();
+
+                    updateAiLabelProgress(data.progress, 'Verarbeitung...', data.message);
+
+                    if (data.status === 'complete') {
+                        clearInterval(pollInterval);
+                        showAiLabelSuccess(taskId);
+                    } else if (data.status === 'error') {
+                        clearInterval(pollInterval);
+                        showAiLabelError(data.message);
+                    }
+                } catch (error) {
+                    clearInterval(pollInterval);
+                    showAiLabelError('Verarbeitungsstatus konnte nicht abgerufen werden');
+                }
+            }, 500);
+        }
+
+        function updateAiLabelProgress(percent, label, message) {
+            aiLabelProgressBar.style.width = percent + '%';
+            aiLabelProgressPercent.textContent = Math.round(percent) + '%';
+            aiLabelProgressLabel.textContent = label;
+            aiLabelStatusMessage.textContent = message;
+        }
+
+        function showAiLabelSuccess(taskId) {
+            aiLabelSuccessIcon.style.display = 'block';
+            aiLabelDownloadBtn.style.display = 'block';
+            aiLabelApplyBtn.disabled = false;
+            aiLabelDownloadBtn.onclick = () => {
+                aiLabelDownloadBtn.disabled = true;
+                fetch(`/ai-label-download/${taskId}/`)
+                    .then(r => {
+                        if (!r.ok) return r.text().then(t => { throw new Error(t); });
+                        const cd = r.headers.get('Content-Disposition');
+                        const m = cd && cd.match(/filename="([^"]+)"/);
+                        const filename = m ? m[1] : 'ai_label_output';
+                        return r.blob().then(b => [b, filename]);
+                    })
+                    .then(([blob, filename]) => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        aiLabelDownloadBtn.disabled = false;
+                    })
+                    .catch(err => {
+                        showAiLabelError('Download fehlgeschlagen: ' + err.message);
+                        aiLabelDownloadBtn.disabled = false;
+                    });
+            };
+        }
+
+        function showAiLabelError(message) {
+            aiLabelErrorMessage.textContent = '❌ ' + message;
+            aiLabelErrorMessage.style.display = 'block';
+            aiLabelProgressContainer.style.display = 'none';
+            aiLabelApplyBtn.disabled = false;
+        }
+
         // Clean up all uploaded/converted files when user leaves the page
         window.addEventListener('beforeunload', () => {
             navigator.sendBeacon('/cleanup-session/');
